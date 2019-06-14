@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">EveryDownload</string>
+    <string name="download">新建任务</string>
+    <string name="delete">删除</string>
+    <string name="delete_file">删除文件</string>
+    <string name="delete_downloaded_file">同时删除已下载文件</string>
+    <string name="delete_download_assure">是否要删除下载？</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="max_running_tasks">最大任务数</string>
+    <string name="no_activity_to_open_file">没有能打开文件的程序</string>
+    <string name="download_file_not_exists">文件已被移动或删除！</string>
+    <string name="directory_not_exists">文件夹不存在！</string>
+</resources>

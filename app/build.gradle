@@ -1,0 +1,41 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-android'
+
+android {
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "com.lyc.everydownload"
+        minSdkVersion buildInfo['minSdkVersion']
+        targetSdkVersion buildInfo['targetSdkVersion']
+        versionCode buildInfo['versionCode']
+        versionName buildInfo['versionName']
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        targetCompatibility = "8"
+        sourceCompatibility = "8"
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps['downloader']
+    implementation deps['appcompact']
+    implementation deps['core']
+    implementation deps['material']
+    implementation deps['constraintlayout']
+    implementation deps['lifecycle-extensions']
+    implementation deps['recyclerview']
+    implementation deps['core-ktx']
+    implementation deps['multi-type']
+    implementation deps['lifecycle-ktx']
+    implementation deps['kotlin-stdlib']
+}
