@@ -6,15 +6,22 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.ListUpdateCallback
-import com.lyc.everydownload.util.ObservableList
 import me.drakeet.multitype.MultiTypeAdapter
 
 /**
  * Created by Liu Yuchuan on 2019/5/20.
  */
-class ReactiveAdapter(
-    private val list: ObservableList<Any>
-) : MultiTypeAdapter(list), ListUpdateCallback {
+class ReactiveAdapter(list: ObservableList<Any>) : MultiTypeAdapter(list), ListUpdateCallback {
+
+    var list: ObservableList<Any> = list
+        set(value) {
+            if (field !== value) {
+                field = value
+                items = value
+                field.removeCallback(this)
+                value.addCallback(this)
+            }
+        }
 
     override fun onInserted(position: Int, count: Int) = notifyItemRangeInserted(position, count)
     override fun onRemoved(position: Int, count: Int) = notifyItemRangeRemoved(position, count)
@@ -35,7 +42,7 @@ class ReactiveAdapter(
     }
 
     inner class ReactiveActivityRegistry(
-        private val activity: Activity
+            private val activity: Activity
     ) : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
         override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle?) {}
@@ -52,7 +59,7 @@ class ReactiveAdapter(
     }
 
     inner class ReactiveFragmentRegistry(
-        private val fragment: Fragment
+            private val fragment: Fragment
     ) : FragmentManager.FragmentLifecycleCallbacks() {
         override fun onFragmentViewDestroyed(fm: FragmentManager, f: Fragment) {
             super.onFragmentViewDestroyed(fm, f)

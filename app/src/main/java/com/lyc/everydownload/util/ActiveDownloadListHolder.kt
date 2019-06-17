@@ -15,14 +15,17 @@ import com.lyc.downloader.utils.DownloadStringUtil
 import com.lyc.everydownload.Async
 import com.lyc.everydownload.DownloadItem
 import java.util.*
+import java.util.concurrent.locks.ReentrantLock
 
 /**
  * Created by Liu Yuchuan on 2019/6/15.
  */
 object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener {
 
-    internal val itemList = ObservableList(ArrayList<Any>())
-    internal val refreshLiveDate = MutableLiveData<Boolean>(false)
+    val itemList
+        get() = itemListLivaData.value!!
+    internal val refreshLiveDate = MutableLiveData(false)
+    internal val itemListLivaData = MutableLiveData(ObservableList(ArrayList<Any>()))
     private val downloadItemList = ObservableList(ArrayList<DownloadItem>())
     private val finishedItemList = ObservableList(ArrayList<DownloadItem>())
     private val idToItem = LongSparseArray<DownloadItem>()
@@ -150,20 +153,33 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
             val downloadInfoList = YCDownloader.queryActiveDownloadInfoList()
             val finishedList = YCDownloader.queryFinishedDownloadInfoList()
             Async.main.execute {
+                downloadItemList.removeCallback(downloadObservableListCallback)
+                finishedItemList.removeCallback(finishedObservableListCallback)
                 downloadItemList.clear()
                 finishedItemList.clear()
+                val newList = ObservableList<Any>(mutableListOf())
+                if (downloadInfoList.isNotEmpty()) {
+                    newList.add(downloading)
+                }
                 for (downloadInfo in downloadInfoList) {
                     val item = downloadInfoToItem(downloadInfo)
                     idToItem.put(downloadInfo.id!!, item)
                     downloadItemList.add(item)
+                    newList.add(item)
                 }
 
+                if (finishedList.isNotEmpty()) {
+                    newList.add(finished)
+                }
                 for (downloadInfo in finishedList) {
                     val item = downloadInfoToItem(downloadInfo)
                     idToItem.put(downloadInfo.id!!, item)
                     finishedItemList.add(item)
+                    newList.add(item)
                 }
-                println("list size: ${itemList.size}")
+                downloadItemList.addCallback(downloadObservableListCallback)
+                finishedItemList.addCallback(finishedObservableListCallback)
+                itemListLivaData.value = newList
                 refreshLiveDate.postValue(false)
             }
         }

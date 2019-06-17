@@ -1,17 +1,18 @@
 package com.lyc.everydownload
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.AsyncListDiffer
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
-import com.google.android.material.snackbar.Snackbar
 import com.lyc.downloader.DownloadTask.*
 import com.lyc.everydownload.util.*
 import kotlinx.android.synthetic.main.activity_main.*
@@ -24,6 +25,7 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
 
     private lateinit var mainViewModel: MainViewModel
     private lateinit var adapter: ReactiveAdapter
+    private lateinit var differ: AsyncListDiffer<Any>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +41,36 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
             observe(this@MainActivity)
             rv.adapter = this
         }
+
+        differ = AsyncListDiffer(adapter, object : DiffUtil.ItemCallback<Any>() {
+            override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
+                return if (oldItem is DownloadItem && newItem is DownloadItem) {
+                    oldItem.id == newItem.id
+                } else {
+                    oldItem == newItem
+                }
+            }
+
+            @SuppressLint("DiffUtilEquals")
+            override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
+                return if (oldItem is DownloadItem && newItem is DownloadItem) {
+                    (oldItem.downloadState == newItem.downloadState &&
+                            oldItem.bps == newItem.bps
+                            && oldItem.downloadedSize == newItem.downloadedSize)
+                } else {
+                    return oldItem == newItem
+                }
+            }
+        })
+
+        differ.addListListener { _, _ ->
+            adapter.list = ActiveDownloadListHolder.itemList
+        }
+
+        ActiveDownloadListHolder.itemListLivaData.observe(this, Observer {
+            differ.submitList(it)
+        })
+
         val itemAnimator = rv.itemAnimator
         if (itemAnimator != null) {
             itemAnimator.changeDuration = 0
