@@ -1,75 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="16dp"
+    android:layout_marginLeft="16dp"
+    android:layout_marginStart="16dp"
     android:background="@color/white">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/download_item_bg"
-        android:padding="16dp">
+        android:background="@drawable/download_item_bg">
 
         <ImageView
             android:id="@+id/iv_icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:layout_gravity="center_vertical"
+            android:padding="16dp"
             android:src="@color/colorPrimaryDark"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="ContentDescription" />
 
-        <View
-            app:layout_constraintStart_toEndOf="@id/iv_icon"
-            android:layout_marginStart="16dp"
-            android:background="@color/lightGray"
-            android:id="@+id/divider"
-            android:layout_width="0.5dp"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
             android:ellipsize="end"
-            android:maxLines="1"
-            android:singleLine="true"
+            android:maxLines="2"
             android:textColor="#000"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toStartOf="@id/dpb"
-            app:layout_constraintStart_toEndOf="@id/divider"
-            app:layout_constraintTop_toTopOf="@id/iv_icon"
-            tools:text="唯品会.apk" />
+            android:layout_marginTop="16dp"
+            app:layout_constraintBottom_toTopOf="@id/progress_bar"
+            app:layout_constraintEnd_toStartOf="@id/button"
+            app:layout_constraintStart_toEndOf="@id/iv_icon"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="spread_inside"
+            tools:text="aaaaaaaaaa_bbbbbbbbbbb_cccccc.apk" />
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@id/state"
+            app:layout_constraintEnd_toStartOf="@id/button"
+            app:layout_constraintStart_toEndOf="@id/iv_icon"
+            app:layout_constraintTop_toBottomOf="@id/name" />
 
         <TextView
             android:id="@+id/state"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
             android:layout_weight="1"
+            android:layout_marginBottom="16dp"
             android:textColor="#8f8f8f"
-            app:layout_constraintBottom_toBottomOf="@id/iv_icon"
-            app:layout_constraintEnd_toStartOf="@id/dpb"
-            app:layout_constraintStart_toEndOf="@id/divider"
-            tools:text="50MB/100MB | 2M/s" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/button"
+            app:layout_constraintStart_toEndOf="@id/iv_icon"
+            app:layout_constraintTop_toBottomOf="@id/progress_bar"
+            app:layout_constraintVertical_chainStyle="spread"
+            android:maxLines="2"
+            tools:text="220.1MB/300.4MB | 2.9M/s | 剩余4分钟" />
 
-        <com.lyc.everydownload.DownloadProgressBar
-            android:id="@+id/dpb"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
+        <ImageButton
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
+            android:background="?android:attr/selectableItemBackground"
+            android:contentDescription="@string/button"
+            android:minWidth="0dp"
+            android:padding="16dp"
+            android:src="@drawable/ic_pause_primary_24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

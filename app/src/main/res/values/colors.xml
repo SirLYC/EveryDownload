@@ -6,4 +6,5 @@
     <color name="lightGray">#e5e5e5</color>
     <color name="white">#fff</color>
     <color name="black">#000</color>
+    <color name="error">#ff5722</color>
 </resources>

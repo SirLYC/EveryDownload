@@ -11,4 +11,5 @@
     <string name="no_activity_to_open_file">没有能打开文件的程序</string>
     <string name="download_file_not_exists">文件已被移动或删除！</string>
     <string name="directory_not_exists">文件夹不存在！</string>
+    <string name="button">button</string>
 </resources>

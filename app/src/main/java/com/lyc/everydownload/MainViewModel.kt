@@ -9,6 +9,7 @@ import com.lyc.downloader.DownloadTask.*
 import com.lyc.downloader.SubmitListener
 import com.lyc.downloader.YCDownloader
 import com.lyc.downloader.db.DownloadInfo
+import com.lyc.downloader.utils.DownloadStringUtil
 import com.lyc.everydownload.util.ObservableList
 import java.util.*
 
@@ -169,14 +170,14 @@ class MainViewModel : ViewModel(), SubmitListener, DownloadListener {
         }
     }
 
-    override fun onPreparing(id: Long) {
+    override fun onDownloadConnecting(id: Long) {
         doUpdateCallback(id) { item ->
-            item.downloadState = PREPARING
+            item.downloadState = CONNECTING
             item
         }
     }
 
-    override fun onProgressUpdate(id: Long, total: Long, cur: Long, bps: Double) {
+    override fun onDownloadProgressUpdate(id: Long, total: Long, cur: Long, bps: Double) {
         doUpdateCallback(id) { item ->
             item.totalSize = total
             item.downloadedSize = cur
@@ -185,7 +186,7 @@ class MainViewModel : ViewModel(), SubmitListener, DownloadListener {
         }
     }
 
-    override fun onUpdateInfo(info: DownloadInfo) {
+    override fun onDownloadUpdateInfo(info: DownloadInfo) {
         doUpdateCallback(info.id) {
             downloadInfoToItem(info).apply {
                 idToItem.put(it.id, this)
@@ -209,9 +210,9 @@ class MainViewModel : ViewModel(), SubmitListener, DownloadListener {
         }
     }
 
-    override fun onDownloadPausing(id: Long) {
+    override fun onDownloadStopping(id: Long) {
         doUpdateCallback(id) { item ->
-            item.downloadState = PAUSING
+            item.downloadState = STOPPING
             item
         }
     }
@@ -260,17 +261,17 @@ class MainViewModel : ViewModel(), SubmitListener, DownloadListener {
 
     private fun downloadInfoToItem(info: DownloadInfo): DownloadItem {
         return DownloadItem(
-            info.id!!,
-            info.path,
-            info.filename,
-            info.url,
-            0.0,
-            info.totalSize,
-            info.downloadedSize,
-            info.createdTime,
-            info.finishedTime,
-            info.downloadItemState,
-            info.errorCode
+                info.id!!,
+                info.path,
+                info.filename ?: DownloadStringUtil.parseFilenameFromUrl(info.url),
+                info.url,
+                0.0,
+                info.totalSize,
+                info.downloadedSize,
+                info.createdTime,
+                info.finishedTime,
+                info.downloadItemState,
+                info.errorCode
         )
     }
 
@@ -289,6 +290,7 @@ class MainViewModel : ViewModel(), SubmitListener, DownloadListener {
     internal fun delete(id: Long, deleteFile: Boolean) {
         val downloadItem = idToItem[id]
         downloadItem?.let {
+            idToItem.remove(id)
             downloadItemObservableList.remove(it)
             finishedItemList.remove(it)
             YCDownloader.delete(id, deleteFile)

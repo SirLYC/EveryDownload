@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.lyc.downloader.DownloadTask.*
 import com.lyc.downloader.YCDownloader
 import com.lyc.everydownload.util.ReactiveAdapter
+import com.lyc.everydownload.util.VerticalItemDecoration
 import com.lyc.everydownload.util.openFile
 import com.lyc.everydownload.util.toast
 import kotlinx.android.synthetic.main.activity_main.*
@@ -67,6 +68,7 @@ class MainActivity : AppCompatActivity(), TextWatcher, DownloadItemViewBinder.On
             }
         }
         rv.layoutManager = LinearLayoutManager(this)
+        rv.addItemDecoration(VerticalItemDecoration((resources.displayMetrics.density * 16).toInt()))
         adapter = ReactiveAdapter(mainViewModel.itemList).apply {
             register(String::class, GroupHeaderItemViewBinder())
             register(DownloadItem::class, DownloadItemViewBinder(this@MainActivity))
@@ -97,15 +99,14 @@ class MainActivity : AppCompatActivity(), TextWatcher, DownloadItemViewBinder.On
             if (index != -1) {
                 spinner.setSelection(index)
             }
-        }
+            spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onNothingSelected(parent: AdapterView<*>?) {
 
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onNothingSelected(parent: AdapterView<*>?) {
+                }
 
-            }
-
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                YCDownloader.setMaxRunningTask(list[position])
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    YCDownloader.setMaxRunningTask(list[position])
+                }
             }
         }
     }
