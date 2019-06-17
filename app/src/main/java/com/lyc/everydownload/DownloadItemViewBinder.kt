@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.lyc.downloader.DownloadTask.*
 import com.lyc.downloader.YCDownloader
 import com.lyc.downloader.utils.DownloadStringUtil
+import com.lyc.everydownload.util.toDateString
 import com.lyc.everydownload.util.toTimeString
 import kotlinx.android.synthetic.main.item_download.view.*
 import me.drakeet.multitype.ItemViewBinder
@@ -53,6 +54,7 @@ class DownloadItemViewBinder(
 
         init {
             itemView.setOnLongClickListener(this)
+            itemView.setOnClickListener(this)
         }
 
         private var item: DownloadItem? = null
@@ -68,7 +70,7 @@ class DownloadItemViewBinder(
             var stateString: String?
             if (total <= 0 || downloadState == FINISH) {
                 progress = 0
-                stateString = DownloadStringUtil.byteToString(total)
+                stateString = DownloadStringUtil.byteToString(cur.toDouble())
             } else {
                 progress = Math.max((cur / total * 100).toInt(), 0)
                 stateString = DownloadStringUtil.byteToString(cur.toDouble())
@@ -109,15 +111,18 @@ class DownloadItemViewBinder(
                 }
             }
 
-            downloadProgressBar.isIndeterminate = total <= 0
+            downloadProgressBar.isIndeterminate = (total <= 0 && (downloadState == RUNNING || downloadState == CONNECTING))
 
             button.isEnabled = downloadState != STOPPING
-            state.text = stateString
             if (item.downloadState == FINISH) {
                 button.setImageDrawable(ContextCompat
                         .getDrawable(button.context, R.drawable.ic_folder_open_primary_24dp))
-                downloadProgressBar.visibility = GONE
+                item.finishedTime?.let {
+                    stateString = "$stateString | ${it.toDateString()}"
+                }
+                state.text = stateString
             } else {
+                state.text = stateString
                 if (downloadState == PENDING
                         || downloadState == RUNNING
                         || downloadState == CONNECTING
@@ -128,7 +133,11 @@ class DownloadItemViewBinder(
                     button.setImageDrawable(ContextCompat
                             .getDrawable(button.context, R.drawable.ic_file_download_primary_24dp))
                 }
-                downloadProgressBar.visibility = VISIBLE
+            }
+
+            downloadProgressBar.visibility = when (downloadState) {
+                FINISH, ERROR, FATAL_ERROR -> GONE
+                else -> VISIBLE
             }
 
             if (downloadState == ERROR || downloadState == FATAL_ERROR) {
@@ -141,7 +150,7 @@ class DownloadItemViewBinder(
         override fun onClick(v: View) {
             item?.let {
                 val state = it.downloadState
-                if (v.id == R.id.button) {
+                if (v.id == R.id.button || v == itemView) {
                     when (state) {
                         FINISH -> {
                             val name = it.filename

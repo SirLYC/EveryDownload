@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_url"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/link"
+        app:layout_constraintBottom_toTopOf="@id/til_filename"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="spread_inside">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionNext" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_filename"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/filename_optional"
+        app:layout_constraintBottom_toTopOf="@id/til_path"
+        app:layout_constraintTop_toBottomOf="@id/til_url">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_filename"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeActionId="@integer/start_download_id"
+            android:imeActionLabel="@string/start_download"
+            android:imeOptions="actionGo" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_path"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/save_location"
+        app:layout_constraintBottom_toTopOf="@id/bt_choose_path"
+        app:layout_constraintTop_toBottomOf="@id/til_filename">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_path"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:imeActionId="@integer/start_download_id"
+            android:imeActionLabel="@string/start_download"
+            android:imeOptions="actionGo" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+        android:id="@+id/bt_choose_path"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/choose"
+        app:layout_constraintBottom_toTopOf="@id/bt_start_download"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/til_path" />
+
+    <Button
+        android:id="@+id/bt_start_download"
+        style="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/start_download"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bt_choose_path" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

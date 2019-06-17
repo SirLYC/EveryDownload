@@ -1,9 +1,11 @@
 package com.lyc.everydownload.util
 
 import android.content.Context
+import android.view.View
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
+import com.google.android.material.snackbar.Snackbar
 
 /**
  * @author liuyuchuan
@@ -28,4 +30,8 @@ fun Fragment.toast(@StringRes msgResId: Int) {
     context?.let {
         Toast.makeText(it, msgResId, Toast.LENGTH_SHORT).show()
     }
+}
+
+fun View.snackbar(msg: String) {
+    Snackbar.make(this, msg, Snackbar.LENGTH_SHORT).show()
 }

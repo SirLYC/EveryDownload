@@ -12,4 +12,10 @@
     <string name="download_file_not_exists">文件已被移动或删除！</string>
     <string name="directory_not_exists">文件夹不存在！</string>
     <string name="button">button</string>
+    <string name="start_download">开始下载</string>
+    <string name="illegal_url">url不合法</string>
+    <string name="filename_optional">文件名（可选）</string>
+    <string name="link">下载链接</string>
+    <string name="choose">选择</string>
+    <string name="save_location">保存位置</string>
 </resources>

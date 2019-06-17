@@ -11,7 +11,7 @@ data class DownloadItem(
         var id: Long = 0,
         var path: String,
         var filename: String,
-        var url: String? = null,
+        var url: String,
         var bps: Double = 0.toDouble(),
         var totalSize: Long = 0,
         var downloadedSize: Long = 0,
@@ -27,5 +27,16 @@ data class DownloadItem(
 
     override fun hashCode(): Int {
         return id.hashCode()
+    }
+
+    companion object {
+        fun itemWithId(id: Long) = DownloadItem(
+                id,
+                "",
+                "," +
+                        null,
+                "",
+                createdTime = Date()
+        )
     }
 }

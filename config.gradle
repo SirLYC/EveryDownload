@@ -24,7 +24,7 @@ ext {
             'recyclerview'        : 'androidx.recyclerview:recyclerview:1.1.0-alpha06',
             'multi-type'          : 'me.drakeet.multitype:multitype:4.0.0-alpha3',
             'material'            : 'com.google.android.material:material:1.1.0-alpha07',
-            'downloader'          : 'com.github.SirLYC:YC-Downloader:latest.release',
+            'downloader'          : 'com.github.SirLYC:YC-Downloader:0.4.1-beta',
 
             'junit'               : 'junit:junit:4.13-beta-2',
 

@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginLeft="16dp"
     android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
     android:background="@color/white">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -25,15 +25,14 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:ignore="ContentDescription" />
 
-
         <TextView
             android:id="@+id/name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:ellipsize="end"
             android:maxLines="2"
             android:textColor="#000"
-            android:layout_marginTop="16dp"
             app:layout_constraintBottom_toTopOf="@id/progress_bar"
             app:layout_constraintEnd_toStartOf="@id/button"
             app:layout_constraintStart_toEndOf="@id/iv_icon"
@@ -55,15 +54,15 @@
             android:id="@+id/state"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginBottom="16dp"
+            android:layout_weight="1"
+            android:maxLines="2"
             android:textColor="#8f8f8f"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/button"
             app:layout_constraintStart_toEndOf="@id/iv_icon"
             app:layout_constraintTop_toBottomOf="@id/progress_bar"
             app:layout_constraintVertical_chainStyle="spread"
-            android:maxLines="2"
             tools:text="220.1MB/300.4MB | 2.9M/s | 剩余4分钟" />
 
         <ImageButton

@@ -26,7 +26,7 @@ class DeleteDownloadDialog : DialogFragment() {
         checkBox = view.cb_delete_file
         return AlertDialog.Builder(ctx)
             .setView(view)
-            .setPositiveButton(getString(R.string.yes)) { d, w ->
+            .setPositiveButton(getString(R.string.yes)) { _, _ ->
                 id?.let {
                     mainViewModel.delete(it, checkBox.isChecked)
                 }
