@@ -105,10 +105,17 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
 
     }
 
+    private fun tryToOpen(file: File) {
+        doWithRWPermission({
+            openFile(file)
+        }, {
+            tryToOpen(file)
+        })
+    }
 
     override fun openItemFile(item: DownloadItem) {
         val name = item.filename
-        openFile(File(item.path, name))
+        tryToOpen(File(item.path, name))
     }
 
     override fun openItemFileNotExist(item: DownloadItem) {
@@ -141,7 +148,7 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
                 1 -> showDeleteAssureDialog(item.id)
                 2 -> showReDownloadDialog(item.id)
                 3 -> mainViewModel.cancel(item.id)
-                4 -> openFile(File(item.path))
+                4 -> tryToOpen(File(item.path))
                 5 -> {
                     // TODO 2019-06-12 @liuyuchuan: select
                 }

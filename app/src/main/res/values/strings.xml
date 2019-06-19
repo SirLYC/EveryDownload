@@ -7,6 +7,7 @@
     <string name="delete_download_assure">是否要删除下载？</string>
     <string name="yes">是</string>
     <string name="no">否</string>
+    <string name="file">好的</string>
     <string name="max_running_tasks">最大任务数</string>
     <string name="no_activity_to_open_file">没有能打开文件的程序</string>
     <string name="download_file_not_exists">文件已被移动或删除！</string>
@@ -18,4 +19,6 @@
     <string name="link">下载链接</string>
     <string name="choose">选择</string>
     <string name="save_location">保存位置</string>
+    <string name="need_rw_retry">需要读写文件权限才能进行操作，是否重试？</string>
+    <string name="need_rw_go_setting">需要读写文件权限才能进行操作，请前往设置允许。</string>
 </resources>

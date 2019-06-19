@@ -38,4 +38,6 @@ dependencies {
     implementation deps['multi-type']
     implementation deps['lifecycle-ktx']
     implementation deps['kotlin-stdlib']
+    implementation deps['rxpermissions']
+    implementation deps['rxjava']
 }
