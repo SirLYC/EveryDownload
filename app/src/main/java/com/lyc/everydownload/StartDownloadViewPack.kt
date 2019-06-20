@@ -1,12 +1,15 @@
 package com.lyc.everydownload
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.EditorInfo.IME_NULL
+import androidx.core.net.toFile
 import androidx.core.widget.addTextChangedListener
+import com.lyc.everydownload.file.FileExploreActivity
 import com.lyc.everydownload.util.requestForResult
 import com.lyc.everydownload.util.toNormalUrl
 import kotlinx.android.synthetic.main.layout_submit.view.*
@@ -35,15 +38,25 @@ class StartDownloadViewPack(context: Context,
             }
             R.id.bt_choose_path, R.id.et_path -> {
                 if (choosePathAction == null) {
-                    val intent = Intent(Intent.ACTION_GET_CONTENT)
-                    intent.type = "*/*"
-                    Intent.createChooser(intent, "选择文件夹")
-                    v.context.requestForResult(intent, 1) { _, data ->
-                        println("${data?.data}")
-                    }
+                    v.context.requestForResult(
+                            Intent(v.context, FileExploreActivity::class.java).apply {
+                                putExtra(FileExploreActivity.KEY_PATH, pathEdit.text.toString().trim())
+                                putExtra(FileExploreActivity.KEY_DIR, true)
+                            },
+                            2,
+                            action = this::handleResult
+                    )
                 } else {
                     choosePathAction.invoke()
                 }
+            }
+        }
+    }
+
+    private fun handleResult(code: Int, data: Intent?) {
+        if (code == Activity.RESULT_OK) {
+            data?.data?.let {
+                pathEdit.setText(it.toFile().canonicalPath)
             }
         }
     }

@@ -21,4 +21,13 @@
     <string name="save_location">保存位置</string>
     <string name="need_rw_retry">需要读写文件权限才能进行操作，是否重试？</string>
     <string name="need_rw_go_setting">需要读写文件权限才能进行操作，请前往设置允许。</string>
+    <string name="cancel">取消</string>
+    <string name="ok">确定</string>
+    <string name="root_dir">/</string>
+    <string name="icon">icon</string>
+    <string name="empty">空空如也～</string>
+    <string name="choose_file">文件选择</string>
+    <string name="back">返回</string>
+    <string name="choose_dir">选择文件夹</string>
+    <string name="explore_file">浏览文件</string>
 </resources>
