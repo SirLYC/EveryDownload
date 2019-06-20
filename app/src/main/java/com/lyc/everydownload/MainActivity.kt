@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
@@ -25,7 +24,26 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
 
     private lateinit var mainViewModel: MainViewModel
     private lateinit var adapter: ReactiveAdapter
-    private lateinit var differ: AsyncListDiffer<Any>
+    private val itemCallback = object : DiffUtil.ItemCallback<Any>() {
+        override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
+            return if (oldItem is DownloadItem && newItem is DownloadItem) {
+                oldItem.id == newItem.id
+            } else {
+                oldItem == newItem
+            }
+        }
+
+        @SuppressLint("DiffUtilEquals")
+        override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
+            return if (oldItem is DownloadItem && newItem is DownloadItem) {
+                (oldItem.downloadState == newItem.downloadState &&
+                        oldItem.bps == newItem.bps
+                        && oldItem.downloadedSize == newItem.downloadedSize)
+            } else {
+                return oldItem == newItem
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,33 +60,8 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
             rv.adapter = this
         }
 
-        differ = AsyncListDiffer(adapter, object : DiffUtil.ItemCallback<Any>() {
-            override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-                return if (oldItem is DownloadItem && newItem is DownloadItem) {
-                    oldItem.id == newItem.id
-                } else {
-                    oldItem == newItem
-                }
-            }
-
-            @SuppressLint("DiffUtilEquals")
-            override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
-                return if (oldItem is DownloadItem && newItem is DownloadItem) {
-                    (oldItem.downloadState == newItem.downloadState &&
-                            oldItem.bps == newItem.bps
-                            && oldItem.downloadedSize == newItem.downloadedSize)
-                } else {
-                    return oldItem == newItem
-                }
-            }
-        })
-
-        differ.addListListener { _, _ ->
-            adapter.list = ActiveDownloadListHolder.itemList
-        }
-
         ActiveDownloadListHolder.itemListLivaData.observe(this, Observer {
-            differ.submitList(it)
+            adapter.replaceList(it, itemCallback, true)
         })
 
         val itemAnimator = rv.itemAnimator
@@ -173,5 +166,10 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
             putLong("id", id)
         }
         dialog.show(supportFragmentManager, "restart")
+    }
+
+    override fun onDestroy() {
+        adapter.removeItemCallback(itemCallback)
+        super.onDestroy()
     }
 }

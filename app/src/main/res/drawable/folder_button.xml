@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="?attr/selectableItemBackground" />
+    <item>
+        <layer-list
+            android:paddingStart="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp">
+            <item android:drawable="@drawable/ic_folder_open_primary_24dp" />
+        </layer-list>
+    </item>
+</layer-list>

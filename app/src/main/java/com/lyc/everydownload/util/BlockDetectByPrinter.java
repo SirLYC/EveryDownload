@@ -10,6 +10,9 @@ import android.util.Log;
  */
 public final class BlockDetectByPrinter {
 
+    /**
+     * @see Looper#loop()
+     */
     private static final String START = ">>>>> Dispatching";
     private static final String END = "<<<<< Finished";
 
@@ -18,13 +21,9 @@ public final class BlockDetectByPrinter {
     // 300ms
     private static final long TIME_BLOCK = 300;
     private static final Runnable logRunnable = () -> {
-        StringBuilder sb = new StringBuilder();
-        StackTraceElement[] stackTrace = Looper.getMainLooper().getThread().getStackTrace();
-        for (StackTraceElement stackTraceElement : stackTrace) {
-            sb.append(stackTraceElement.toString()).append('\n');
-        }
-
-        Log.w(TAG, sb.toString());
+        final Exception exception = new Exception("Spend too much time on main thread!");
+        exception.setStackTrace(Looper.getMainLooper().getThread().getStackTrace());
+        Log.w(TAG, exception);
     };
 
     private static final Handler handler;
@@ -35,7 +34,8 @@ public final class BlockDetectByPrinter {
         handler = new Handler(handlerThread.getLooper());
     }
 
-    private BlockDetectByPrinter() { }
+    private BlockDetectByPrinter() {
+    }
 
     public static void start() {
         Looper.getMainLooper().setMessageLogging(x -> {

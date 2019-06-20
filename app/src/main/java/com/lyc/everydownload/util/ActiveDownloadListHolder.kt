@@ -15,7 +15,6 @@ import com.lyc.downloader.utils.DownloadStringUtil
 import com.lyc.everydownload.Async
 import com.lyc.everydownload.DownloadItem
 import java.util.*
-import java.util.concurrent.locks.ReentrantLock
 
 /**
  * Created by Liu Yuchuan on 2019/6/15.
@@ -60,7 +59,6 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
         }
 
         override fun onMoved(fromPosition: Int, toPosition: Int) {
-            itemList.enable = false
             itemList.enable = false
             itemList[fromPosition + 1] = downloadItemList[toPosition]
             itemList[toPosition + 1] = downloadItemList[fromPosition]
@@ -111,7 +109,6 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
 
         override fun onMoved(fromPosition: Int, toPosition: Int) {
             itemList.enable = false
-            itemList.enable = false
             itemList[fromPosition + 1 + startOffset] = downloadItemList[toPosition]
             itemList[toPosition + 1 + startOffset] = downloadItemList[fromPosition]
             itemList.enable = true
@@ -153,8 +150,8 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
             val downloadInfoList = YCDownloader.queryActiveDownloadInfoList()
             val finishedList = YCDownloader.queryFinishedDownloadInfoList()
             Async.main.execute {
-                downloadItemList.removeCallback(downloadObservableListCallback)
-                finishedItemList.removeCallback(finishedObservableListCallback)
+                downloadItemList.enable = false
+                finishedItemList.enable = false
                 downloadItemList.clear()
                 finishedItemList.clear()
                 val newList = ObservableList<Any>(mutableListOf())
@@ -177,8 +174,8 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
                     finishedItemList.add(item)
                     newList.add(item)
                 }
-                downloadItemList.addCallback(downloadObservableListCallback)
-                finishedItemList.addCallback(finishedObservableListCallback)
+                downloadItemList.enable = true
+                finishedItemList.enable = true
                 itemListLivaData.value = newList
                 refreshLiveDate.postValue(false)
             }

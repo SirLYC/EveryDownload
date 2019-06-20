@@ -74,10 +74,5 @@ inline fun Context.doWithRWPermission(
         crossinline action: () -> Unit,
         crossinline reGrantAction: () -> Unit
 ) {
-    if (this is FragmentActivity) {
-        val activity: FragmentActivity = this
-        activity.doWithRWPermission(action, reGrantAction)
-    } else if (this is Fragment) {
-        activity!!.doWithRWPermission(action, reGrantAction)
-    }
+    getFragmentActivity()?.doWithRWPermission(action, reGrantAction)
 }

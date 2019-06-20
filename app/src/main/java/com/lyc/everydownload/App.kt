@@ -14,10 +14,12 @@ class App : Application() {
         // multi process
         YCDownloader.install(this, true)
         ActiveDownloadListHolder.setup()
-        BlockDetectByPrinter.start()
         // single process
         //        YCDownloader.install(this, false);
         // or
         //        YCDownloader.install(this);
+        if (BuildConfig.DEBUG) {
+            BlockDetectByPrinter.start()
+        }
     }
 }

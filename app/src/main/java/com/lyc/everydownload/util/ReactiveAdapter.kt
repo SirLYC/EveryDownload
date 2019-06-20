@@ -11,8 +11,6 @@ import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import com.lyc.everydownload.Async
 import me.drakeet.multitype.MultiTypeAdapter
-import java.util.ArrayList
-import kotlin.collections.HashMap
 import kotlin.collections.set
 
 /**
@@ -23,6 +21,11 @@ class ReactiveAdapter(list: ObservableList<Any>) : MultiTypeAdapter(list), ListU
     private var gen = 0
     private val genToCallback = SparseArray<DiffUtil.ItemCallback<Any>>()
     private val callbackToGen = HashMap<DiffUtil.ItemCallback<Any>, Int>()
+    /**
+     * Decided by performance of [DiffUtil] and your data's complication
+     * https://developer.android.com/reference/android/support/v7/util/DiffUtil
+     */
+    var useBackgroudThreadThreshold = 100
     private val replaceCommitActions = mutableListOf<ReplaceCommitAction>()
 
     var list: ObservableList<Any> = list
@@ -82,30 +85,25 @@ class ReactiveAdapter(list: ObservableList<Any>) : MultiTypeAdapter(list), ListU
         }
     }
 
-    fun replaceList(newList: List<Any>, cb: DiffUtil.ItemCallback<Any>, detectMoves: Boolean = false) {
-        if (newList == this.list) {
+    /**
+     * Note: this method may take time to refresh list
+     * If you need show it more quickly without animation,
+     * just replace [list] and use [RecyclerView.Adapter.notifyDataSetChanged]
+     */
+    fun replaceList(newList: ObservableList<Any>, cb: DiffUtil.ItemCallback<Any>, detectMoves: Boolean = false) {
+        if (newList === this.list) {
             return
         }
-
         gen++
-        val exeGen = gen
-        genToCallback.put(gen, cb)
-        callbackToGen[cb] = gen
-        // to make thread safe
-        val oldList = ArrayList(list)
-        Async.computation.execute {
+
+        if (list.size < useBackgroudThreadThreshold) {
             val diffResult = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                    return if (gen != exeGen) {
-                        true
-                    } else {
-                        genToCallback[gen]?.areItemsTheSame(oldList[oldItemPosition], newList[newItemPosition])
-                                ?: true
-                    }
+                    return cb.areItemsTheSame(list[oldItemPosition], newList[newItemPosition])
                 }
 
                 override fun getOldListSize(): Int {
-                    return oldList.size
+                    return list.size
                 }
 
                 override fun getNewListSize(): Int {
@@ -113,36 +111,78 @@ class ReactiveAdapter(list: ObservableList<Any>) : MultiTypeAdapter(list), ListU
                 }
 
                 override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                    return if (gen != exeGen) {
-                        true
-                    } else {
-                        genToCallback[gen]?.areContentsTheSame(oldList[oldItemPosition], newList[newItemPosition])
-                                ?: true
-                    }
+                    return cb.areContentsTheSame(list[oldItemPosition], newList[newItemPosition])
                 }
 
             }, detectMoves)
-
-            Async.main.execute {
-                if (exeGen == gen) {
-                    list.enable = false
-                    list.clear()
-                    list.addAll(newList)
-                    list.enable = true
-                    diffResult.dispatchUpdatesTo(this as RecyclerView.Adapter<*>)
-                    for (replaceCommitAction in replaceCommitActions) {
-                        replaceCommitAction.onCommitReplace()
+            list = newList
+            diffResult.dispatchUpdatesTo(this as RecyclerView.Adapter<*>)
+            dispatchCommitActions(newList, list)
+        } else {
+            val exeGen = gen
+            genToCallback.put(gen, cb)
+            callbackToGen[cb] = gen
+            // to make thread safe
+            val oldList = list
+            Async.computation.execute {
+                val diffResult = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                        return if (gen != exeGen) {
+                            true
+                        } else {
+                            genToCallback[gen]?.areItemsTheSame(oldList[oldItemPosition], newList[newItemPosition])
+                                    ?: true
+                        }
                     }
+
+                    override fun getOldListSize(): Int {
+                        return oldList.size
+                    }
+
+                    override fun getNewListSize(): Int {
+                        return newList.size
+                    }
+
+                    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                        return if (gen != exeGen) {
+                            true
+                        } else {
+                            genToCallback[gen]?.areContentsTheSame(oldList[oldItemPosition], newList[newItemPosition])
+                                    ?: true
+                        }
+                    }
+
+                }, detectMoves)
+                Async.main.execute {
+                    if (exeGen == gen && genToCallback[gen] != null) {
+                        list = newList
+                        diffResult.dispatchUpdatesTo(this as RecyclerView.Adapter<*>)
+                        dispatchCommitActions(newList, oldList)
+                    }
+                    removeItemCallback(cb)
                 }
-                remove(cb)
+            }
+
+        }
+    }
+
+    private fun dispatchCommitActions(newList: ObservableList<Any>, oldList: ObservableList<Any>) {
+        if (replaceCommitActions.isNotEmpty()) {
+            val newListCopy = newList.toList()
+            for (replaceCommitAction in replaceCommitActions) {
+                replaceCommitAction.onCommitReplace(oldList, newListCopy)
             }
         }
     }
 
-    fun remove(cb: DiffUtil.ItemCallback<Any>) {
-        callbackToGen.remove(cb)?.let {
-            genToCallback.remove(it)
-        }
+    fun removeItemCallback(cb: DiffUtil.ItemCallback<Any>) {
+        var index: Int
+        do {
+            index = genToCallback.indexOfValue(cb)
+            if (index != -1) {
+                genToCallback.removeAt(index)
+            }
+        } while (index != -1)
     }
 
     fun addReplaceCommitAction(replaceCommitAction: ReplaceCommitAction) {
@@ -154,6 +194,9 @@ class ReactiveAdapter(list: ObservableList<Any>) : MultiTypeAdapter(list), ListU
     }
 
     interface ReplaceCommitAction {
-        fun onCommitReplace()
+        /**
+         * [newList] is a copy of new list
+         */
+        fun onCommitReplace(oldList: ObservableList<Any>, newList: List<Any>)
     }
 }

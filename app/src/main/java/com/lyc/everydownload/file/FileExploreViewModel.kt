@@ -13,18 +13,23 @@ import java.io.File
  */
 class FileExploreViewModel : ViewModel() {
     lateinit var root: File
-
-
     internal val errorMsg = SingleLiveEvent<String>()
     internal val successMsg = SingleLiveEvent<String>()
     internal val dirLiveData = MutableLiveData<File>()
-    internal val newListEvent = SingleLiveEvent<List<Any>>()
+    internal val fileListLiveData = MutableLiveData(ObservableList<Any>(mutableListOf()))
     internal val currentDir
         get() = dirLiveData.value
-    internal var lastViewDir: File? = null
-    internal val itemList = ObservableList<Any>(mutableListOf())
+    private var lastViewDir: File? = null
+    internal val itemList
+        get() = fileListLiveData.value!!
+    private var onlyDir = false
+    fun lastViewDir(): File? {
+        val result = lastViewDir
+        lastViewDir = null
+        return result
+    }
 
-    fun setup(root: File, currentPath: String) {
+    fun setup(root: File, currentPath: String, onlyDir: Boolean) {
         this.root = root
         if (!root.exists() || !root.isDirectory) {
             throw IllegalArgumentException("root must be an existing directory!")
@@ -36,6 +41,7 @@ class FileExploreViewModel : ViewModel() {
                 chDir(root)
             }
         }
+        this.onlyDir = onlyDir
     }
 
     fun refresh() {
@@ -46,9 +52,18 @@ class FileExploreViewModel : ViewModel() {
             return
         }
 
-        value.listFiles()?.let {
-            newListEvent.value = arrayListOf(*it)
+        value.listFiles()?.let(this::updateList)
+    }
+
+    private fun updateList(array: Array<out File>) {
+        val arr = if (onlyDir) {
+            array.filterTo(mutableListOf()) { file ->
+                file.isDirectory
+            }
+        } else {
+            array.toMutableList<Any>()
         }
+        this.fileListLiveData.value = ObservableList(arr)
     }
 
     fun chDir(dir: File) {
@@ -56,36 +71,35 @@ class FileExploreViewModel : ViewModel() {
             errorMsg.value = "无法访问目标文件夹"
             return
         }
-        lastViewDir = dirLiveData.value
-        dir.listFiles()?.let {
-            dirLiveData.value = dir
-            newListEvent.value = arrayListOf(*it)
-        }
+        dirLiveData.value = dir
+        dir.listFiles()?.let(this::updateList)
     }
 
-    fun mkDir(name: String) {
+    fun mkDir(name: String): String? {
         if (name.isBlank()) {
-            errorMsg.value = "文件夹名不能为空"
-            return
+            return "文件夹名不能为空"
         }
 
         dirLiveData.value?.let { parent ->
             val file = File(parent, name)
-            if (file.exists()) {
-                errorMsg.value = "文件已存在"
+            return if (file.exists()) {
+                "文件已存在"
             } else if (!file.mkdir()) {
-                errorMsg.value = "创建文件夹失败"
+                "创建文件夹失败"
             } else {
-                itemList.add(0, file)
+                refresh()
+                null
             }
         }
+
+        return "创建失败"
     }
 
     fun del(file: File) {
         if (!file.exists()) {
             errorMsg.value = "删除文件不存在"
             itemList.remove(file)
-        } else if (file.delete()) {
+        } else if (file.deleteRecursively()) {
             successMsg.value = "删除成功"
             itemList.remove(file)
         } else {
@@ -98,9 +112,10 @@ class FileExploreViewModel : ViewModel() {
             if (cur == root) {
                 return
             }
+            lastViewDir = cur
             chDir(cur.parentFile)
         }
     }
 
-    fun isRoot() = dirLiveData.value == root
+    fun isRoot() = dirLiveData.value == root || currentDir?.exists() != true
 }

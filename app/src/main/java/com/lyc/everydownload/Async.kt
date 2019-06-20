@@ -12,5 +12,12 @@ object Async {
     internal val cache: Executor = Executors.newCachedThreadPool()
     private val HANDLER = Handler(Looper.getMainLooper())
     internal val main: Executor = Executor { command -> HANDLER.post(command) }
+    internal val instantMain = Executor { command ->
+        if (Thread.currentThread() == Looper.getMainLooper().thread) {
+            command.run()
+        } else {
+            HANDLER.post(command)
+        }
+    }
     internal val computation = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() + 1)
 }

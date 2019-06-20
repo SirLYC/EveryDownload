@@ -5,19 +5,17 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.view.View.GONE
-import android.view.View.VISIBLE
+import android.view.View
+import android.view.View.*
 import android.view.ViewTreeObserver
+import android.widget.PopupMenu
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.lyc.everydownload.R
-import com.lyc.everydownload.util.ReactiveAdapter
-import com.lyc.everydownload.util.closeAllAnimation
-import com.lyc.everydownload.util.logW
-import com.lyc.everydownload.util.toast
+import com.lyc.everydownload.util.*
 import kotlinx.android.synthetic.main.activity_file_explore.*
 import java.io.File
 
@@ -26,14 +24,46 @@ import java.io.File
  * @date 2019-06-19
  * @email kevinliu.sir@qq.com
  */
-class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAction {
-    override fun onCommitReplace() {
-        fileExploreViewModel.lastViewDir?.let {
-            val index = fileExploreViewModel.itemList.indexOf(it)
-            if (index >= 0 && index < fileExploreViewModel.itemList.size) {
-                rv.scrollToPosition(index)
+class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnItemLongClickListener<File> {
+    override fun onItemClick(v: View, value: File, index: Int) {
+        if (!value.exists()) {
+            fileExploreViewModel.itemList.let {
+                if (index >= 0 && index < it.size && it[index] == value) {
+                    it.remove(index)
+                }
+            }
+        } else if (value.isDirectory) {
+            fileExploreViewModel.chDir(value)
+        } else {
+            if (!isDir) {
+                // TODO 2019-06-20
+                logW("TODO: Click file action")
             }
         }
+    }
+
+    override fun onItemLongClick(v: View, value: File, index: Int): Boolean {
+        val popupMenu = PopupMenu(this, v)
+        popupMenu.menu.run {
+            add(0, 0, 0, R.string.delete)
+        }
+        popupMenu.setOnMenuItemClickListener { menu ->
+            when (menu.itemId) {
+                0 -> {
+                    AlertDialog.Builder(this)
+                            .setMessage("确定删除\"%s\"吗？".format(value.name))
+                            .setPositiveButton(R.string.ok) { _, _ ->
+                                fileExploreViewModel.del(value)
+                            }
+                            .setNegativeButton(R.string.cancel, null)
+                            .show()
+                    true
+                }
+                else -> false
+            }
+        }
+        popupMenu.show()
+        return true
     }
 
     companion object {
@@ -45,19 +75,6 @@ class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAc
     private var isDir = false
     private var currentPath: String = ""
     private lateinit var adapter: ReactiveAdapter
-    private val callback = object : DiffUtil.ItemCallback<Any>() {
-        override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
-            return (oldItem as? File)?.canonicalPath == (newItem as? File)?.canonicalPath
-        }
-
-        override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
-            val oldFile = oldItem as File
-            val newFile = newItem as File
-
-            return oldFile.lastModified() == newFile.lastModified() && oldFile.length() == newFile.length()
-        }
-
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,20 +100,7 @@ class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAc
 
 
         adapter = ReactiveAdapter(fileExploreViewModel.itemList).apply {
-            register(File::class, FileItemViewBinder { file, index ->
-                if (!file.exists()) {
-                    fileExploreViewModel.itemList.let {
-                        if (index >= 0 && index < it.size && it[index] == file) {
-                            it.remove(index)
-                        }
-                    }
-                } else if (file.isDirectory) {
-                    fileExploreViewModel.chDir(file)
-                } else {
-                    // TODO 2019-06-20
-                    logW("TODO: Click file action")
-                }
-            })
+            register(File::class, FileItemViewBinder(this@FileExploreActivity, this@FileExploreActivity))
             observe(this@FileExploreActivity)
             rv.adapter = this
         }
@@ -109,33 +113,45 @@ class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAc
 
         rv.closeAllAnimation()
 
-        fileExploreViewModel.newListEvent.observe(this, Observer {
-            if (it.isEmpty()) {
-
-                adapter.list.clear()
-            } else {
-                adapter.replaceList(it, callback, true)
-            }
-
+        fileExploreViewModel.fileListLiveData.observe(this, Observer {
+            adapter.list = it
+            adapter.notifyDataSetChanged()
             val gone = it.isEmpty()
-            rv.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    if (gone) {
-                        empty_view.visibility = VISIBLE
-                        rv.visibility = GONE
-                    } else {
-                        empty_view.visibility = GONE
-                        rv.visibility = VISIBLE
-                    }
-                    fileExploreViewModel.lastViewDir?.let { file ->
-                        val index = fileExploreViewModel.itemList.indexOf(file)
-                        if (index >= 0 && index < fileExploreViewModel.itemList.size) {
-                            rv.scrollToPosition(index)
-                            rv.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                        }
+            if (!gone) {
+                rv.visibility = INVISIBLE
+                empty_view.visibility = GONE
+                var delayVis = false
+                fileExploreViewModel.lastViewDir()?.let { file ->
+                    val index = fileExploreViewModel.itemList.indexOf(file)
+                    if (index >= 0 && index < fileExploreViewModel.itemList.size) {
+                        delayVis = true
+                        rv.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                            override fun onGlobalLayout() {
+                                rv.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                                var post = false
+                                if (index >= 0 && index < fileExploreViewModel.itemList.size) {
+                                    rv.scrollToPosition(index)
+                                    rv.stopScroll()
+                                    post = true
+                                    rv.post {
+                                        rv.visibility = VISIBLE
+                                    }
+                                }
+                                if (!post) {
+                                    rv.visibility = VISIBLE
+                                }
+                            }
+                        })
+
                     }
                 }
-            })
+                if (!delayVis) {
+                    rv.visibility = VISIBLE
+                }
+            } else {
+                empty_view.visibility = VISIBLE
+                rv.visibility = GONE
+            }
         })
 
 
@@ -149,7 +165,7 @@ class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAc
                         data = Uri.fromFile(it)
                     })
                     finish()
-                } ?: kotlin.run {
+                } ?: this.run {
                     toast("文件夹已失效")
                     fileExploreViewModel.chDir(fileExploreViewModel.root)
                 }
@@ -158,6 +174,10 @@ class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAc
             supportActionBar?.title = getString(R.string.explore_file)
             bt_cancel.text = getString(R.string.back)
             button_bar.visibility = GONE
+        }
+
+        bt_create_mkdir.setOnClickListener {
+            showDialog<MkdirDialog>()
         }
 
         if (fileExploreViewModel.itemList.isEmpty()) {
@@ -173,8 +193,20 @@ class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAc
             finish()
         }
 
-        fileExploreViewModel.setup(rootFile, currentPath)
+        refresh.setOnRefreshListener {
+            fileExploreViewModel.refresh()
+            refresh.isRefreshing = false
+        }
 
+        fileExploreViewModel.successMsg.observe(this, Observer {
+            toast(it)
+        })
+
+        fileExploreViewModel.errorMsg.observe(this, Observer {
+            rv.snackbar(it)
+        })
+
+        fileExploreViewModel.setup(rootFile, currentPath, isDir)
     }
 
     override fun onBackPressed() {
@@ -189,10 +221,5 @@ class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAc
         super.onSaveInstanceState(outState)
         outState.putBoolean(KEY_DIR, isDir)
         outState.putString(KEY_PATH, currentPath)
-    }
-
-    override fun onDestroy() {
-        adapter.remove(callback)
-        super.onDestroy()
     }
 }

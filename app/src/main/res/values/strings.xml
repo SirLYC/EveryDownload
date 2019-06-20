@@ -30,4 +30,12 @@
     <string name="back">返回</string>
     <string name="choose_dir">选择文件夹</string>
     <string name="explore_file">浏览文件</string>
+    <string name="mkdir">新建</string>
+    <string name="input_new_dir_name">输入文件夹名</string>
+    <string name="mk_dir">创建新文件夹</string>
+    <string name="create">创建</string>
+    <string name="create_success">创建成功</string>
+    <string name="dir_not_exist">文件夹不存在</string>
+    <string name="path_not_dir">路径不是文件夹</string>
+    <string name="create_new_download_task">新建下载任务</string>
 </resources>

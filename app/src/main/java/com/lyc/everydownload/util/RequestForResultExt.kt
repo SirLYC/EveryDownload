@@ -39,17 +39,7 @@ fun FragmentActivity.requestForResult(intent: Intent, requestCode: Int, action: 
 }
 
 fun Context.requestForResult(intent: Intent, requestCode: Int, action: requestResultAction) {
-    when {
-        this is Fragment -> {
-            val fragment: Fragment = this
-            fragment.requestForResult(intent, requestCode, action)
-        }
-        this is FragmentActivity -> {
-            val activity: FragmentActivity = this
-            activity.requestForResult(intent, requestCode, action)
-        }
-        else -> logW("Context.requestForResult(), context type = ${javaClass.simpleName}")
-    }
+    getFragmentActivity()?.requestForResult(intent, requestCode, action)
 }
 
 class RequestForResultProxyFragment : Fragment() {

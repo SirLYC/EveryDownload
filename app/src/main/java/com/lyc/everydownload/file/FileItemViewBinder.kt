@@ -9,6 +9,8 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.lyc.downloader.utils.DownloadStringUtil
 import com.lyc.everydownload.R
+import com.lyc.everydownload.util.OnItemClickListener
+import com.lyc.everydownload.util.OnItemLongClickListener
 import com.lyc.everydownload.util.getIcon
 import com.lyc.everydownload.util.toDateString
 import kotlinx.android.synthetic.main.layout_file.view.*
@@ -22,7 +24,8 @@ import java.util.*
  * @email kevinliu.sir@qq.com
  */
 class FileItemViewBinder(
-        private val onFileClicked: (file: File, index: Int) -> Unit
+        private val onItemClickListener: OnItemClickListener<File>,
+        private val onItemLongClickListener: OnItemLongClickListener<File>
 ) : ItemViewBinder<File, FileItemViewBinder.ViewHolder>() {
 
     override fun onBindViewHolder(holder: ViewHolder, item: File) {
@@ -30,20 +33,34 @@ class FileItemViewBinder(
     }
 
     override fun onCreateViewHolder(inflater: LayoutInflater, parent: ViewGroup): ViewHolder {
-        return ViewHolder(inflater.inflate(R.layout.layout_file, parent, false), onFileClicked)
+        return ViewHolder(
+                inflater.inflate(R.layout.layout_file, parent, false),
+                onItemClickListener,
+                onItemLongClickListener
+        )
     }
 
-    class ViewHolder(itemView: View, private val onFileClicked: (file: File, index: Int) -> Unit) : RecyclerView.ViewHolder(itemView) {
+    class ViewHolder(
+            itemView: View,
+            private val onItemClickListener: OnItemClickListener<File>,
+            private val onItemLongClickListener: OnItemLongClickListener<File>
+    ) : RecyclerView.ViewHolder(itemView) {
         private var file: File? = null
         private val icon = itemView.iv_icon
         private val filename = itemView.tv_filename
         private val extraInfo = itemView.tv_extra_info
 
         init {
-            itemView.setOnClickListener {
-                file?.let {
-                    onFileClicked(it, adapterPosition)
+            itemView.setOnClickListener { view ->
+                file?.let { file ->
+                    onItemClickListener.onItemClick(view, file, adapterPosition)
                 }
+            }
+
+            itemView.setOnLongClickListener { view ->
+                file?.let { file ->
+                    onItemLongClickListener.onItemLongClick(view, file, adapterPosition)
+                } ?: false
             }
         }
 

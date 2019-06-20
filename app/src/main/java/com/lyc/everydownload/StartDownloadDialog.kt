@@ -18,6 +18,7 @@ class StartDownloadDialog : DialogFragment() {
         val ctx = context!!
         mainViewModel = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
         return AlertDialog.Builder(ctx)
+                .setTitle(getString(R.string.create_new_download_task))
                 .setView(StartDownloadViewPack(ctx, this::startDownloadAction).view)
                 .create()
     }
@@ -25,8 +26,7 @@ class StartDownloadDialog : DialogFragment() {
     private fun startDownloadAction(url: String, path: String, filename: String?) {
         activity?.doWithRWPermission(
                 {
-                    // TODO: 2019/6/17 path choose
-                    mainViewModel.submit(url, context!!.externalCacheDir!!.absolutePath, filename)
+                    mainViewModel.submit(url, path, filename)
                     dismiss()
                 },
                 {
