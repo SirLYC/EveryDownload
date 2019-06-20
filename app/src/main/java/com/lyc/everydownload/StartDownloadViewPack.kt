@@ -10,6 +10,7 @@ import android.view.inputmethod.EditorInfo.IME_NULL
 import androidx.core.net.toFile
 import androidx.core.widget.addTextChangedListener
 import com.lyc.everydownload.file.FileExploreActivity
+import com.lyc.everydownload.util.doWithRWPermission
 import com.lyc.everydownload.util.requestForResult
 import com.lyc.everydownload.util.toNormalUrl
 import kotlinx.android.synthetic.main.layout_submit.view.*
@@ -38,14 +39,18 @@ class StartDownloadViewPack(context: Context,
             }
             R.id.bt_choose_path, R.id.et_path -> {
                 if (choosePathAction == null) {
-                    v.context.requestForResult(
-                            Intent(v.context, FileExploreActivity::class.java).apply {
-                                putExtra(FileExploreActivity.KEY_PATH, pathEdit.text.toString().trim())
-                                putExtra(FileExploreActivity.KEY_DIR, true)
-                            },
-                            2,
-                            action = this::handleResult
-                    )
+                    v.context.doWithRWPermission({
+                        v.context.requestForResult(
+                                Intent(v.context, FileExploreActivity::class.java).apply {
+                                    putExtra(FileExploreActivity.KEY_PATH, pathEdit.text.toString().trim())
+                                    putExtra(FileExploreActivity.KEY_DIR, true)
+                                },
+                                2,
+                                action = this::handleResult
+                        )
+                    }, {
+                        onClick(v)
+                    })
                 } else {
                     choosePathAction.invoke()
                 }

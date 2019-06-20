@@ -18,16 +18,24 @@ class FileExploreViewModel : ViewModel() {
     internal val errorMsg = SingleLiveEvent<String>()
     internal val successMsg = SingleLiveEvent<String>()
     internal val dirLiveData = MutableLiveData<File>()
+    internal val newListEvent = SingleLiveEvent<List<Any>>()
     internal val currentDir
         get() = dirLiveData.value
+    internal var lastViewDir: File? = null
     internal val itemList = ObservableList<Any>(mutableListOf())
 
-    fun setup(root: File) {
+    fun setup(root: File, currentPath: String) {
         this.root = root
         if (!root.exists() || !root.isDirectory) {
             throw IllegalArgumentException("root must be an existing directory!")
         }
-        chDir(root)
+        File(currentPath).let {
+            if (it.exists() && it.isDirectory) {
+                chDir(it)
+            } else {
+                chDir(root)
+            }
+        }
     }
 
     fun refresh() {
@@ -39,8 +47,7 @@ class FileExploreViewModel : ViewModel() {
         }
 
         value.listFiles()?.let {
-            itemList.clear()
-            itemList.addAll(it)
+            newListEvent.value = arrayListOf(*it)
         }
     }
 
@@ -49,10 +56,10 @@ class FileExploreViewModel : ViewModel() {
             errorMsg.value = "无法访问目标文件夹"
             return
         }
+        lastViewDir = dirLiveData.value
         dir.listFiles()?.let {
             dirLiveData.value = dir
-            itemList.clear()
-            itemList.addAll(it)
+            newListEvent.value = arrayListOf(*it)
         }
     }
 

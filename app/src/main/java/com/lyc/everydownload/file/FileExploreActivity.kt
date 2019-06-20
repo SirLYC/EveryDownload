@@ -7,14 +7,15 @@ import android.os.Bundle
 import android.os.Environment
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.view.ViewTreeObserver
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.ListUpdateCallback
-import androidx.recyclerview.widget.SimpleItemAnimator
 import com.lyc.everydownload.R
 import com.lyc.everydownload.util.ReactiveAdapter
+import com.lyc.everydownload.util.closeAllAnimation
 import com.lyc.everydownload.util.logW
 import com.lyc.everydownload.util.toast
 import kotlinx.android.synthetic.main.activity_file_explore.*
@@ -25,22 +26,13 @@ import java.io.File
  * @date 2019-06-19
  * @email kevinliu.sir@qq.com
  */
-class FileExploreActivity : AppCompatActivity(), ListUpdateCallback {
-    override fun onChanged(position: Int, count: Int, payload: Any?) {}
-
-    override fun onMoved(fromPosition: Int, toPosition: Int) {}
-
-    override fun onInserted(position: Int, count: Int) {
-        if (fileExploreViewModel.itemList.size - count == 0) {
-            rv.visibility = VISIBLE
-            empty_view.visibility = GONE
-        }
-    }
-
-    override fun onRemoved(position: Int, count: Int) {
-        if (fileExploreViewModel.itemList.isEmpty()) {
-            rv.visibility = GONE
-            empty_view.visibility = VISIBLE
+class FileExploreActivity : AppCompatActivity(), ReactiveAdapter.ReplaceCommitAction {
+    override fun onCommitReplace() {
+        fileExploreViewModel.lastViewDir?.let {
+            val index = fileExploreViewModel.itemList.indexOf(it)
+            if (index >= 0 && index < fileExploreViewModel.itemList.size) {
+                rv.scrollToPosition(index)
+            }
         }
     }
 
@@ -52,6 +44,20 @@ class FileExploreActivity : AppCompatActivity(), ListUpdateCallback {
     private lateinit var fileExploreViewModel: FileExploreViewModel
     private var isDir = false
     private var currentPath: String = ""
+    private lateinit var adapter: ReactiveAdapter
+    private val callback = object : DiffUtil.ItemCallback<Any>() {
+        override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
+            return (oldItem as? File)?.canonicalPath == (newItem as? File)?.canonicalPath
+        }
+
+        override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
+            val oldFile = oldItem as File
+            val newFile = newItem as File
+
+            return oldFile.lastModified() == newFile.lastModified() && oldFile.length() == newFile.length()
+        }
+
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +66,6 @@ class FileExploreActivity : AppCompatActivity(), ListUpdateCallback {
 
         fileExploreViewModel = ViewModelProviders.of(this).get(FileExploreViewModel::class.java)
         val rootFile = Environment.getExternalStorageDirectory() ?: File("/")
-        fileExploreViewModel.setup(rootFile)
 
         var getArgs = false
         if (savedInstanceState != null) {
@@ -76,16 +81,8 @@ class FileExploreActivity : AppCompatActivity(), ListUpdateCallback {
             currentPath = intent.getStringExtra(KEY_PATH) ?: ""
         }
 
-        File(currentPath).let {
-            if (it.exists() && it.isDirectory) {
-                fileExploreViewModel.chDir(it)
-            } else {
-                currentPath = rootFile.absolutePath
-            }
-        }
 
-
-        ReactiveAdapter(fileExploreViewModel.itemList).apply {
+        adapter = ReactiveAdapter(fileExploreViewModel.itemList).apply {
             register(File::class, FileItemViewBinder { file, index ->
                 if (!file.exists()) {
                     fileExploreViewModel.itemList.let {
@@ -104,16 +101,42 @@ class FileExploreActivity : AppCompatActivity(), ListUpdateCallback {
             rv.adapter = this
         }
 
-        fileExploreViewModel.itemList.addCallback(this)
 
         rv.layoutManager = LinearLayoutManager(this)
         fileExploreViewModel.dirLiveData.observe(this, Observer {
             tv_path.text = it.canonicalPath
         })
 
-        rv.itemAnimator?.addDuration = 0
-        rv.itemAnimator?.changeDuration = 0
-        (rv.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
+        rv.closeAllAnimation()
+
+        fileExploreViewModel.newListEvent.observe(this, Observer {
+            if (it.isEmpty()) {
+
+                adapter.list.clear()
+            } else {
+                adapter.replaceList(it, callback, true)
+            }
+
+            val gone = it.isEmpty()
+            rv.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if (gone) {
+                        empty_view.visibility = VISIBLE
+                        rv.visibility = GONE
+                    } else {
+                        empty_view.visibility = GONE
+                        rv.visibility = VISIBLE
+                    }
+                    fileExploreViewModel.lastViewDir?.let { file ->
+                        val index = fileExploreViewModel.itemList.indexOf(file)
+                        if (index >= 0 && index < fileExploreViewModel.itemList.size) {
+                            rv.scrollToPosition(index)
+                            rv.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        }
+                    }
+                }
+            })
+        })
 
 
         if (isDir) {
@@ -149,6 +172,9 @@ class FileExploreActivity : AppCompatActivity(), ListUpdateCallback {
             setResult(Activity.RESULT_CANCELED)
             finish()
         }
+
+        fileExploreViewModel.setup(rootFile, currentPath)
+
     }
 
     override fun onBackPressed() {
@@ -166,7 +192,7 @@ class FileExploreActivity : AppCompatActivity(), ListUpdateCallback {
     }
 
     override fun onDestroy() {
-        fileExploreViewModel.itemList.removeCallback(this)
+        adapter.remove(callback)
         super.onDestroy()
     }
 }

@@ -2,6 +2,7 @@ package com.lyc.everydownload.util
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -13,6 +14,7 @@ import com.tbruyelle.rxpermissions2.RxPermissions
  * @date 2019-06-19
  * @email kevinliu.sir@qq.com
  */
+
 
 @SuppressLint("CheckResult")
 inline fun FragmentActivity.doWithPermission(
@@ -38,14 +40,7 @@ inline fun Fragment.doWithPermission(
         crossinline deniedAction: () -> Unit = {},
         crossinline shouldRationaleAction: () -> Unit = {}
 ) {
-    RxPermissions(activity!!).requestEachCombined(*permissions)
-            .subscribe { permission ->
-                when {
-                    permission.granted -> grantedAction()
-                    permission.shouldShowRequestPermissionRationale -> shouldRationaleAction()
-                    else -> deniedAction()
-                }
-            }
+    activity!!.doWithPermission(*permissions, grantedAction = grantedAction, deniedAction = deniedAction, shouldRationaleAction = shouldRationaleAction)
 }
 
 inline fun FragmentActivity.doWithRWPermission(
@@ -73,4 +68,16 @@ inline fun FragmentActivity.doWithRWPermission(
                         .show()
             }
     )
+}
+
+inline fun Context.doWithRWPermission(
+        crossinline action: () -> Unit,
+        crossinline reGrantAction: () -> Unit
+) {
+    if (this is FragmentActivity) {
+        val activity: FragmentActivity = this
+        activity.doWithRWPermission(action, reGrantAction)
+    } else if (this is Fragment) {
+        activity!!.doWithRWPermission(action, reGrantAction)
+    }
 }
