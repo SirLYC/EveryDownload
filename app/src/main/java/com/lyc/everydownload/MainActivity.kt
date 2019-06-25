@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.lyc.downloader.DownloadTask.*
 import com.lyc.everydownload.util.*
+import com.lyc.everydownload.widget.MultiStateView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
@@ -62,6 +63,11 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
 
         ActiveDownloadListHolder.itemListLivaData.observe(this, Observer {
             adapter.replaceList(it, itemCallback, true)
+            if (it.isEmpty()) {
+                msv.showState(MultiStateView.STATE_EMPTY)
+            } else {
+                msv.showContent()
+            }
         })
 
         val itemAnimator = rv.itemAnimator

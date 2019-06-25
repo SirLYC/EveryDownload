@@ -70,7 +70,6 @@ class MultiStateView : FrameLayout {
         if (stubs[2].layoutResource == 0) {
             stubs[2].layoutResource = R.layout.layout_error_default
         }
-
     }
 
     fun showState(@StateInt state: Int) {

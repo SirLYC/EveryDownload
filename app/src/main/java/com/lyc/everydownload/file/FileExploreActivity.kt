@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.lyc.everydownload.R
 import com.lyc.everydownload.util.*
+import com.lyc.everydownload.widget.MultiStateView
 import kotlinx.android.synthetic.main.activity_file_explore.*
 import java.io.File
 
@@ -118,8 +119,8 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
             adapter.notifyDataSetChanged()
             val gone = it.isEmpty()
             if (!gone) {
+                msv.showContent()
                 rv.visibility = INVISIBLE
-                empty_view.visibility = GONE
                 var delayVis = false
                 fileExploreViewModel.lastViewDir()?.let { file ->
                     val index = fileExploreViewModel.itemList.indexOf(file)
@@ -149,8 +150,7 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
                     rv.visibility = VISIBLE
                 }
             } else {
-                empty_view.visibility = VISIBLE
-                rv.visibility = GONE
+                msv.showState(MultiStateView.STATE_EMPTY)
             }
         })
 
@@ -181,11 +181,9 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
         }
 
         if (fileExploreViewModel.itemList.isEmpty()) {
-            rv.visibility = GONE
-            empty_view.visibility = VISIBLE
+            msv.showState(MultiStateView.STATE_EMPTY)
         } else {
-            rv.visibility = VISIBLE
-            empty_view.visibility = GONE
+            msv.showContent()
         }
 
         bt_cancel.setOnClickListener {

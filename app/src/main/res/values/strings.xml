@@ -38,4 +38,6 @@
     <string name="dir_not_exist">文件夹不存在</string>
     <string name="path_not_dir">路径不是文件夹</string>
     <string name="create_new_download_task">新建下载任务</string>
+    <string name="error"><![CDATA[出错了~(>_<)~]]></string>
+    <string name="loading">加载中…</string>
 </resources>
