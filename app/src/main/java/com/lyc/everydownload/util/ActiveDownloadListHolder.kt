@@ -14,54 +14,103 @@ import com.lyc.downloader.db.DownloadInfo
 import com.lyc.downloader.utils.DownloadStringUtil
 import com.lyc.everydownload.Async
 import com.lyc.everydownload.DownloadItem
+import com.lyc.everydownload.R
 import java.util.*
 
 /**
  * Created by Liu Yuchuan on 2019/6/15.
  */
 object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener {
+    const val ID_DOWNLOADING = 0
+    const val ID_FINISHED = 1
 
     val itemList
         get() = itemListLivaData.value!!
     internal val refreshLiveDate = MutableLiveData(false)
     internal val itemListLivaData = MutableLiveData(ObservableList(ArrayList<Any>()))
-    private val downloadItemList = ObservableList(ArrayList<DownloadItem>())
+    private val downloadingItemList = ObservableList(ArrayList<DownloadItem>())
     private val finishedItemList = ObservableList(ArrayList<DownloadItem>())
     private val idToItem = LongSparseArray<DownloadItem>()
-    private const val downloading = "正在下载"
-    private const val finished = "已完成"
-
-    private val downloadObservableListCallback = object : ListUpdateCallback {
-        override fun onInserted(position: Int, count: Int) {
-            var offset = 0
-            val list: MutableList<Any> = ArrayList(downloadItemList.subList(position, position + count))
-            if (count == downloadItemList.size) {
-                list.add(0, downloading)
-            } else {
-                offset = 1
+    private var downloadingHeader = DownloadGroupHeader(ID_DOWNLOADING, "正在下载", R.drawable.ic_file_download_gray_24dp, true)
+    private var finishedHeader = DownloadGroupHeader(ID_FINISHED, "已完成", R.drawable.ic_view_list_grey_24dp, true)
+    private val downloadEmptyItem = EmptyListItem(ID_DOWNLOADING, "还没有任何下载记录～", R.drawable.ic_empty_download)
+    private val finishedEmptyItem = EmptyListItem(ID_FINISHED, "还没有任何下载记录～", R.drawable.ic_empty_box)
+    internal var expandDownloading = true
+        set(value) {
+            if (field != value) {
+                field = value
+                downloadingHeader.expand = value
+                itemList.onChanged(0, 1, DownloadGroupHeader.UPDATE_EXPAND)
+                downloadingItemList.enable = value
+                if (value) {
+                    if (downloadingItemList.isEmpty()) {
+                        itemList.add(1, downloadEmptyItem)
+                    } else {
+                        itemList.addAll(1, downloadingItemList)
+                    }
+                } else {
+                    if (downloadingItemList.isEmpty()) {
+                        itemList.removeAt(1)
+                    } else {
+                        itemList.removeRange(1, downloadingItemList.size)
+                    }
+                }
             }
-            itemList.addAll(position + offset, list)
+        }
+
+    internal var expandFinished = true
+        set(value) {
+            if (field != value) {
+                field = value
+                finishedHeader.expand = value
+                val offset = finishedListStartOffset
+                itemList.onChanged(offset - 1, 1, DownloadGroupHeader.UPDATE_EXPAND)
+                finishedItemList.enable = value
+                if (value) {
+                    if (finishedItemList.isEmpty()) {
+                        itemList.add(offset, finishedEmptyItem)
+                    } else {
+                        itemList.addAll(offset, finishedItemList)
+                    }
+                } else {
+                    if (finishedItemList.isEmpty()) {
+                        itemList.removeAt(offset)
+                    } else {
+                        itemList.removeRange(offset, finishedItemList.size)
+                    }
+                }
+            }
+        }
+
+
+    private val finishedListStartOffset
+        get() = if (!expandDownloading) {
+            2
+        } else if (downloadingItemList.isEmpty()) {
+            3
+        } else {
+            downloadingItemList.size + 2
+        }
+
+    private val downloadingListCallback = object : ListUpdateCallback {
+        override fun onInserted(position: Int, count: Int) {
+            if (count == downloadingItemList.size) {
+                itemList.removeAt(1)
+            }
+            itemList.addAll(position + 1, downloadingItemList.subList(position, position + count))
         }
 
         override fun onRemoved(position: Int, count: Int) {
-            var offset = 0
-            if (downloadItemList.isEmpty() && !itemList.isEmpty() && itemList[0] === downloading) {
-                itemList.removeAt(0)
-            } else {
-                offset = 1
-            }
-            val p = position + offset
-            var i = 0
-            while (i < count) {
-                itemList.removeAt(p)
-                i++
+            itemList.removeRange(position + 1, count)
+            if (downloadingItemList.isEmpty()) {
+                itemList.add(1, downloadEmptyItem)
             }
         }
 
         override fun onMoved(fromPosition: Int, toPosition: Int) {
             itemList.enable = false
-            itemList[fromPosition + 1] = downloadItemList[toPosition]
-            itemList[toPosition + 1] = downloadItemList[fromPosition]
+            itemList[fromPosition + 1] = downloadingItemList[toPosition]
+            itemList[toPosition + 1] = downloadingItemList[fromPosition]
             itemList.enable = true
             itemList.onMoved(fromPosition + 1, toPosition + 1)
         }
@@ -69,55 +118,41 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
         override fun onChanged(position: Int, count: Int, payload: Any?) {
             var i = 0
             while (i < count) {
-                itemList[position + i + 1] = downloadItemList[position + i]
+                itemList[position + i + 1] = downloadingItemList[position + i]
                 i++
             }
         }
     }
 
     private val finishedObservableListCallback = object : ListUpdateCallback {
-        private val startOffset: Int
-            get() = if (downloadItemList.isEmpty()) {
-                0
-            } else downloadItemList.size + 1
-
         override fun onInserted(position: Int, count: Int) {
-            var offset = 0
-            val list: MutableList<Any> = ArrayList(finishedItemList.subList(position, position + count))
+            val offset = finishedListStartOffset
             if (count == finishedItemList.size) {
-                list.add(0, finished)
-            } else {
-                offset = 1
+                itemList.removeAt(offset)
             }
-            itemList.addAll(position + startOffset + offset, list)
+            itemList.addAll(position + offset, finishedItemList.subList(position, position + count))
         }
 
         override fun onRemoved(position: Int, count: Int) {
-            var offset = startOffset
-            if (finishedItemList.isEmpty() && !itemList.isEmpty() && itemList[offset] === finished) {
-                itemList.removeAt(offset)
-            } else {
-                offset++
-            }
-            val p = position + offset
-            var i = 0
-            while (i < count) {
-                itemList.removeAt(p)
-                i++
+            val offset = finishedListStartOffset
+            itemList.removeRange(position + offset, count)
+            if (finishedItemList.isEmpty()) {
+                itemList.add(offset, finishedEmptyItem)
             }
         }
 
         override fun onMoved(fromPosition: Int, toPosition: Int) {
+            val offset = finishedListStartOffset
             itemList.enable = false
-            itemList[fromPosition + 1 + startOffset] = downloadItemList[toPosition]
-            itemList[toPosition + 1 + startOffset] = downloadItemList[fromPosition]
+            itemList[fromPosition + offset] = downloadingItemList[toPosition]
+            itemList[toPosition + offset] = downloadingItemList[fromPosition]
             itemList.enable = true
-            itemList.onMoved(fromPosition + 1 + startOffset, toPosition + 1 + startOffset)
+            itemList.onMoved(fromPosition + offset, toPosition + offset)
         }
 
         override fun onChanged(position: Int, count: Int, payload: Any?) {
             var i = 0
-            val offset = startOffset + 1
+            val offset = finishedListStartOffset
             while (i < count) {
                 itemList[position + i + offset] = finishedItemList[position + i]
                 i++
@@ -127,7 +162,7 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
 
 
     init {
-        downloadItemList.addCallback(downloadObservableListCallback)
+        downloadingItemList.addCallback(downloadingListCallback)
         finishedItemList.addCallback(finishedObservableListCallback)
     }
 
@@ -150,46 +185,63 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
             val downloadInfoList = YCDownloader.queryActiveDownloadInfoList()
             val finishedList = YCDownloader.queryFinishedDownloadInfoList()
             Async.main.execute {
-                downloadItemList.enable = false
+                downloadingItemList.enable = false
                 finishedItemList.enable = false
-                downloadItemList.clear()
+                downloadingItemList.clear()
                 finishedItemList.clear()
                 val newList = ObservableList<Any>(mutableListOf())
-                if (downloadInfoList.isNotEmpty()) {
-                    newList.add(downloading)
+                downloadingHeader = DownloadGroupHeader(ID_DOWNLOADING, "正在下载",
+                        R.drawable.ic_file_download_gray_24dp, expandDownloading).also {
+                    it.count = downloadInfoList.size
+                    newList.add(it)
                 }
-                for (downloadInfo in downloadInfoList) {
-                    val item = downloadInfoToItem(downloadInfo)
-                    idToItem.put(downloadInfo.id!!, item)
-                    downloadItemList.add(item)
-                    newList.add(item)
+                if (expandDownloading) {
+                    if (downloadInfoList.isEmpty()) {
+                        newList.add(downloadEmptyItem)
+                    } else {
+                        for (downloadInfo in downloadInfoList) {
+                            val item = downloadInfoToItem(downloadInfo)
+                            idToItem.put(downloadInfo.id!!, item)
+                            downloadingItemList.add(item)
+                            newList.add(item)
+                        }
+                    }
+                    downloadingItemList.enable = true
                 }
 
-                if (finishedList.isNotEmpty()) {
-                    newList.add(finished)
+                finishedHeader = DownloadGroupHeader(ID_FINISHED, "已完成",
+                        R.drawable.ic_view_list_grey_24dp, expandFinished).also {
+                    it.count = finishedList.size
+                    newList.add(it)
                 }
-                for (downloadInfo in finishedList) {
-                    val item = downloadInfoToItem(downloadInfo)
-                    idToItem.put(downloadInfo.id!!, item)
-                    finishedItemList.add(item)
-                    newList.add(item)
+                if (expandFinished) {
+                    if (finishedList.isEmpty()) {
+                        newList.add(finishedEmptyItem)
+                    } else {
+                        for (downloadInfo in finishedList) {
+                            val item = downloadInfoToItem(downloadInfo)
+                            idToItem.put(downloadInfo.id!!, item)
+                            finishedItemList.add(item)
+                            newList.add(item)
+                        }
+                    }
+                    finishedItemList.enable = true
                 }
-                downloadItemList.enable = true
-                finishedItemList.enable = true
+
                 itemListLivaData.value = newList
-                refreshLiveDate.postValue(false)
+                refreshLiveDate.value = false
             }
         }
     }
 
     private fun doUpdateCallback(id: Long, updateCallback: (item: DownloadItem) -> DownloadItem) {
         val item = idToItem.get(id)?.let(updateCallback) ?: return
-        val index = downloadItemList.indexOf(item)
+        val index = downloadingItemList.indexOf(item)
         if (index == -1) {
             finishedItemList.remove(item)
-            downloadItemList.add(0, item)
+            downloadingItemList.add(0, item)
         } else if (index != -1) {
-            downloadItemList[index] = item
+            downloadingItemList[index] = item
         }
     }
 
@@ -216,10 +268,14 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
                             finishTimeInList <= newFinishTime
                         }
                     }
+                    finishedHeader.count++
+                    itemList.onChanged(finishedListStartOffset - 1, 1, DownloadGroupHeader.UPDATE_COUNT)
                 } else {
-                    addToListBy(newAddItem, downloadItemList) { item ->
+                    addToListBy(newAddItem, downloadingItemList) { item ->
                         item.createdTime <= newAddItem.createdTime
                     }
+                    downloadingHeader.count++
+                    itemList.onChanged(0, 1, DownloadGroupHeader.UPDATE_COUNT)
                 }
             }
         }
@@ -227,8 +283,14 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
 
     override fun onDownloadTaskRemove(id: Long) {
         val item = idToItem.get(id)
-        downloadItemList.remove(item)
-        finishedItemList.remove(item)
+        if (downloadingItemList.remove(item)) {
+            downloadingHeader.count--
+            itemList.onChanged(0, 1, DownloadGroupHeader.UPDATE_COUNT)
+        }
+        if (finishedItemList.remove(item)) {
+            finishedHeader.count--
+            itemList.onChanged(finishedListStartOffset - 1, 1, DownloadGroupHeader.UPDATE_COUNT)
+        }
         idToItem.remove(id)
     }
 
@@ -294,16 +356,17 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
     }
 
     override fun onDownloadCanceled(id: Long) {
-        val item = idToItem.get(id)
-        downloadItemList.remove(item)
-        finishedItemList.remove(item)
-        idToItem.remove(id)
+        onDownloadTaskRemove(id)
     }
 
     override fun onDownloadFinished(downloadInfo: DownloadInfo) {
         val item = idToItem.get(downloadInfo.id!!)
-        if (item != null && downloadItemList.remove(item)) {
+        if (item != null && downloadingItemList.remove(item)) {
             finishedItemList.add(0, downloadInfoToItem(downloadInfo))
+            downloadingHeader.count--
+            finishedHeader.count++
+            itemList.onChanged(0, 1, DownloadGroupHeader.UPDATE_COUNT)
+            itemList.onChanged(finishedListStartOffset - 1, 1, DownloadGroupHeader.UPDATE_COUNT)
         }
     }
 

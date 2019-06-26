@@ -43,7 +43,7 @@ class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableL
 
     override fun addAll(elements: Collection<T>): Boolean {
         val oldSize = size
-        val result = realList.addAll(elements) // return false if elements is empty
+        val result = realList.addAll(elements) // return false if elements is Empty
         if (result) {
             this.onInserted(oldSize, elements.size)
         }
@@ -51,7 +51,7 @@ class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableL
     }
 
     override fun addAll(index: Int, elements: Collection<T>): Boolean {
-        val result = realList.addAll(index, elements) // return false if elements is empty
+        val result = realList.addAll(index, elements) // return false if elements is Empty
         if (result) {
             this.onInserted(index, elements.size)
         }
@@ -68,15 +68,16 @@ class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableL
         this.onRemoved(0, oldSize)
     }
 
-    override fun removeRange(fromIndex: Int, toIndex: Int) {
-        // assert fromIndex < toIndex
-        var index = fromIndex
-        while (index < toIndex) {
-            realList.removeAt(index)
-            index++
+    public override fun removeRange(fromIndex: Int, count: Int) {
+        var remove = 0
+        while (remove < count && fromIndex < size) {
+            realList.removeAt(fromIndex)
+            remove++
         }
 
-        this.onRemoved(0, toIndex - fromIndex)
+        if (remove > 0) {
+            this.onRemoved(fromIndex, remove)
+        }
     }
 
     /* ============================== ListUpdateCallback ============================== */

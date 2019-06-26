@@ -25,7 +25,7 @@ class ReactiveAdapter(list: ObservableList<Any>) : MultiTypeAdapter(list), ListU
      * Decided by performance of [DiffUtil] and your data's complication
      * https://developer.android.com/reference/android/support/v7/util/DiffUtil
      */
-    var useBackgroudThreadThreshold = 100
+    var useBackgroundThreadThreshold = 100
     private val replaceCommitActions = mutableListOf<ReplaceCommitAction>()
 
     var list: ObservableList<Any> = list
@@ -41,7 +41,7 @@ class ReactiveAdapter(list: ObservableList<Any>) : MultiTypeAdapter(list), ListU
     override fun onInserted(position: Int, count: Int) = notifyItemRangeInserted(position, count)
     override fun onRemoved(position: Int, count: Int) = notifyItemRangeRemoved(position, count)
     override fun onMoved(fromPosition: Int, toPosition: Int) = notifyItemMoved(fromPosition, toPosition)
-    override fun onChanged(position: Int, count: Int, payload: Any?) = notifyItemRangeChanged(position, count, payload)
+    override fun onChanged(position: Int, count: Int, payload: Any?) = if (count == 1) notifyItemChanged(position, payload) else notifyItemRangeChanged(position, count, payload)
 
     fun observe(activity: Activity) {
         activity.application.registerActivityLifecycleCallbacks(ReactiveActivityRegistry(activity))
@@ -96,7 +96,7 @@ class ReactiveAdapter(list: ObservableList<Any>) : MultiTypeAdapter(list), ListU
         }
         gen++
 
-        if (list.size < useBackgroudThreadThreshold) {
+        if (list.size < useBackgroundThreadThreshold) {
             val diffResult = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
                     return cb.areItemsTheSame(list[oldItemPosition], newList[newItemPosition])

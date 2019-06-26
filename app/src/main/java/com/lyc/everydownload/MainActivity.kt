@@ -21,13 +21,24 @@ import java.io.File
 /**
  * Created by Liu Yuchuan on 2019/4/22.
  */
-class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonClickListener {
+class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonClickListener, OnItemClickListener<DownloadGroupHeader> {
+    override fun onItemClick(v: View, value: DownloadGroupHeader, index: Int) {
+        if (value.id == ActiveDownloadListHolder.ID_DOWNLOADING) {
+            ActiveDownloadListHolder.expandDownloading = !value.expand
+        } else {
+            ActiveDownloadListHolder.expandFinished = !value.expand
+        }
+    }
 
     private lateinit var mainViewModel: MainViewModel
     private lateinit var adapter: ReactiveAdapter
     private val itemCallback = object : DiffUtil.ItemCallback<Any>() {
         override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
             return if (oldItem is DownloadItem && newItem is DownloadItem) {
+                oldItem.id == newItem.id
+            } else if (oldItem is DownloadGroupHeader && newItem is DownloadGroupHeader) {
+                oldItem.id == newItem.id
+            } else if (oldItem is EmptyListItem && newItem is EmptyListItem) {
                 oldItem.id == newItem.id
             } else {
                 oldItem == newItem
@@ -40,6 +51,10 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
                 (oldItem.downloadState == newItem.downloadState &&
                         oldItem.bps == newItem.bps
                         && oldItem.downloadedSize == newItem.downloadedSize)
+            } else if (oldItem is DownloadGroupHeader && newItem is DownloadGroupHeader) {
+                oldItem.count == newItem.count && oldItem.expand == newItem.expand
+            } else if (oldItem is EmptyListItem && newItem is EmptyListItem) {
+                true
             } else {
                 return oldItem == newItem
             }
@@ -55,8 +70,9 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
         rv.layoutManager = LinearLayoutManager(this)
         rv.addItemDecoration(VerticalItemDecoration((resources.displayMetrics.density * 16).toInt()))
         adapter = ReactiveAdapter(ActiveDownloadListHolder.itemList).apply {
-            register(String::class, GroupHeaderItemViewBinder())
+            register(DownloadGroupHeader::class, DownloadGroupHeaderItemViewBinder(this@MainActivity))
             register(DownloadItem::class, DownloadItemViewBinder(this@MainActivity))
+            register(EmptyListItem::class, EmptyItemViewBinder())
             observe(this@MainActivity)
             rv.adapter = this
         }
