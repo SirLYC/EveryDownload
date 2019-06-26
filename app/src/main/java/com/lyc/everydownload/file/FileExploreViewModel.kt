@@ -2,8 +2,8 @@ package com.lyc.everydownload.file
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.lyc.everydownload.util.ObservableList
 import com.lyc.everydownload.util.SingleLiveEvent
+import com.lyc.everydownload.util.rv.ObservableList
 import java.io.File
 
 /**
@@ -56,7 +56,7 @@ class FileExploreViewModel : ViewModel() {
     }
 
     private fun updateList(array: Array<out File>) {
-        val arr = if (onlyDir) {
+        val arr: MutableList<Any> = if (onlyDir) {
             array.filterTo(mutableListOf()) { file ->
                 file.isDirectory
             }

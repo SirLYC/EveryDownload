@@ -16,6 +16,8 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.lyc.everydownload.R
 import com.lyc.everydownload.util.*
+import com.lyc.everydownload.util.rv.ReactiveAdapter
+import com.lyc.everydownload.util.rv.closeAllAnimation
 import com.lyc.everydownload.widget.MultiStateView
 import kotlinx.android.synthetic.main.activity_file_explore.*
 import java.io.File

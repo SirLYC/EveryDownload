@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.lyc.downloader.DownloadTask.*
 import com.lyc.everydownload.util.*
+import com.lyc.everydownload.util.rv.ReactiveAdapter
+import com.lyc.everydownload.util.rv.VerticalItemDecoration
 import com.lyc.everydownload.widget.MultiStateView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File

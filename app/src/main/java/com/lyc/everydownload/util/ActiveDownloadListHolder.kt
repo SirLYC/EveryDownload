@@ -12,9 +12,11 @@ import com.lyc.downloader.DownloadTasksChangeListener
 import com.lyc.downloader.YCDownloader
 import com.lyc.downloader.db.DownloadInfo
 import com.lyc.downloader.utils.DownloadStringUtil
+import com.lyc.everydownload.App
 import com.lyc.everydownload.Async
 import com.lyc.everydownload.DownloadItem
 import com.lyc.everydownload.R
+import com.lyc.everydownload.util.rv.ObservableList
 import java.util.*
 
 /**
@@ -24,6 +26,7 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
     const val ID_DOWNLOADING = 0
     const val ID_FINISHED = 1
 
+
     val itemList
         get() = itemListLivaData.value!!
     internal val refreshLiveDate = MutableLiveData(false)
@@ -31,10 +34,10 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
     private val downloadingItemList = ObservableList(ArrayList<DownloadItem>())
     private val finishedItemList = ObservableList(ArrayList<DownloadItem>())
     private val idToItem = LongSparseArray<DownloadItem>()
-    private var downloadingHeader = DownloadGroupHeader(ID_DOWNLOADING, "正在下载", R.drawable.ic_file_download_gray_24dp, true)
-    private var finishedHeader = DownloadGroupHeader(ID_FINISHED, "已完成", R.drawable.ic_view_list_grey_24dp, true)
-    private val downloadEmptyItem = EmptyListItem(ID_DOWNLOADING, "还没有任何下载记录～", R.drawable.ic_empty_download)
-    private val finishedEmptyItem = EmptyListItem(ID_FINISHED, "还没有任何下载记录～", R.drawable.ic_empty_box)
+    private var downloadingHeader = DownloadGroupHeader(ID_DOWNLOADING, App.appContext.getString(R.string.title_downloading), R.drawable.ic_file_download_gray_24dp, true)
+    private var finishedHeader = DownloadGroupHeader(ID_FINISHED, App.appContext.getString(R.string.title_finished), R.drawable.ic_view_list_grey_24dp, true)
+    private val downloadEmptyItem = EmptyListItem(ID_DOWNLOADING, App.appContext.getString(R.string.empty_downloading_list), R.drawable.ic_empty_download)
+    private val finishedEmptyItem = EmptyListItem(ID_FINISHED, App.appContext.getString(R.string.advice_to_to_download), R.drawable.ic_empty_box)
     internal var expandDownloading = true
         set(value) {
             if (field != value) {

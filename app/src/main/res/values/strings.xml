@@ -40,4 +40,8 @@
     <string name="create_new_download_task">新建下载任务</string>
     <string name="error"><![CDATA[出错了~(>_<)~]]></string>
     <string name="loading">加载中…</string>
+    <string name="advice_to_to_download">去下载点啥吧～</string>
+    <string name="empty_downloading_list">没有下载任务～</string>
+    <string name="title_finished">已完成</string>
+    <string name="title_downloading">正在下载</string>
 </resources>

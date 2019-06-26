@@ -1,4 +1,4 @@
-package com.lyc.everydownload.util
+package com.lyc.everydownload.util.rv
 
 import android.graphics.Rect
 import android.view.View

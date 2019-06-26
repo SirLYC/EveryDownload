@@ -1,4 +1,4 @@
-package com.lyc.everydownload.util
+package com.lyc.everydownload.util.rv
 
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator

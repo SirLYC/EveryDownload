@@ -1,4 +1,4 @@
-package com.lyc.everydownload.util
+package com.lyc.everydownload.util.rv
 
 import android.app.Activity
 import android.app.Application

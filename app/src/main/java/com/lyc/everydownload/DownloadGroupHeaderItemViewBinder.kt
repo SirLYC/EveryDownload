@@ -8,11 +8,11 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.RecyclerView
 import com.lyc.everydownload.util.DownloadGroupHeader
 import com.lyc.everydownload.util.OnItemClickListener
+import com.lyc.everydownload.util.rv.MutableItemViewBinder
+import com.lyc.everydownload.util.rv.MutableViewHolder
 import kotlinx.android.synthetic.main.item_group_header.view.*
-import me.drakeet.multitype.ItemViewBinder
 import kotlin.math.roundToLong
 
 /**
@@ -20,29 +20,20 @@ import kotlin.math.roundToLong
  */
 class DownloadGroupHeaderItemViewBinder(
         private val onItemClickListener: OnItemClickListener<DownloadGroupHeader>
-) : ItemViewBinder<DownloadGroupHeader, DownloadGroupHeaderItemViewBinder.ViewHolder>() {
-
-    override fun onBindViewHolder(holder: ViewHolder, item: DownloadGroupHeader) {
-        holder.bind(item, null)
-    }
+) : MutableItemViewBinder<DownloadGroupHeader, DownloadGroupHeaderItemViewBinder.ViewHolder>() {
 
     override fun onCreateViewHolder(inflater: LayoutInflater, parent: ViewGroup): ViewHolder {
-        println("create!")
         return ViewHolder(inflater.inflate(R.layout.item_group_header, parent, false), onItemClickListener)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, item: DownloadGroupHeader, payloads: List<Any>) {
-        holder.bind(item, payloads)
     }
 
     class ViewHolder(
             itemView: View,
             private val onItemClickListener: OnItemClickListener<DownloadGroupHeader>
-    ) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+    ) : MutableViewHolder<DownloadGroupHeader>(itemView), View.OnClickListener {
 
         override fun onClick(v: View?) {
             if (v == text) {
-                downloadGroupHeader?.let {
+                oldItem?.let {
                     onItemClickListener.onItemClick(text, it, adapterPosition)
                 }
             }
@@ -54,7 +45,7 @@ class DownloadGroupHeaderItemViewBinder(
 
         private val defaultTextColor: ColorStateList = text.textColors
         private val primaryColor = ContextCompat.getColor(itemView.context, R.color.colorPrimary)
-        private var downloadGroupHeader: DownloadGroupHeader? = null
+        private var oldItem: DownloadGroupHeader? = null
         // mutate!!!
         private val endDrawable = (ContextCompat.getDrawable(itemView.context, R.drawable.expand_arrow_anim))!!.mutate()
 
@@ -74,27 +65,27 @@ class DownloadGroupHeaderItemViewBinder(
             }
         }
 
-        fun bind(item: DownloadGroupHeader, payload: List<Any>?) {
-            val updateAll = downloadGroupHeader != item || payload == null || payload.isEmpty()
-            this.downloadGroupHeader = item
+        override fun onBind(oldItem: DownloadGroupHeader?, newItem: DownloadGroupHeader, payloads: List<Any>?) {
+            val updateAll = oldItem != newItem || payloads == null || payloads.isEmpty()
+            this.oldItem = newItem
 
             if (updateAll) {
-                if (item.expand) {
+                if (newItem.expand) {
                     text.setTextColor(primaryColor)
                     endDrawable.level = 10000
                 } else {
                     text.setTextColor(defaultTextColor)
                     endDrawable.level = 0
                 }
-                val startIcon = ContextCompat.getDrawable(itemView.context, item.icon)
+                val startIcon = ContextCompat.getDrawable(itemView.context, newItem.icon)
                 text.setCompoundDrawablesRelativeWithIntrinsicBounds(
                         startIcon, null, endDrawable, null)
-                text.text = ("${item.text} (${item.count})")
+                text.text = ("${newItem.text} (${newItem.count})")
             } else {
-                payload!!.forEach {
+                payloads!!.forEach {
                     when (it) {
                         DownloadGroupHeader.UPDATE_EXPAND -> {
-                            if (item.expand) {
+                            if (newItem.expand) {
                                 if (!expandAnim.isRunning) {
                                     expandAnim.setIntValues(endDrawable.level, 10000)
                                     expandAnim.duration = ((10000 - endDrawable.level) / 10000f * rotateTime).roundToLong()
@@ -110,11 +101,12 @@ class DownloadGroupHeaderItemViewBinder(
                         }
 
                         DownloadGroupHeader.UPDATE_COUNT -> {
-                            text.text = ("${item.text}(${item.count})")
+                            text.text = ("${newItem.text}(${newItem.count})")
                         }
                     }
                 }
             }
+
         }
     }
 
