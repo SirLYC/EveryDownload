@@ -16,7 +16,6 @@ import com.lyc.downloader.DownloadTask.*
 import com.lyc.everydownload.util.*
 import com.lyc.everydownload.util.rv.ReactiveAdapter
 import com.lyc.everydownload.util.rv.VerticalItemDecoration
-import com.lyc.everydownload.widget.MultiStateView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
@@ -81,11 +80,6 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
 
         ActiveDownloadListHolder.itemListLivaData.observe(this, Observer {
             adapter.replaceList(it, itemCallback, true)
-            if (it.isEmpty()) {
-                msv.showState(MultiStateView.STATE_EMPTY)
-            } else {
-                msv.showContent()
-            }
         })
 
         val itemAnimator = rv.itemAnimator
@@ -130,13 +124,27 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
         })
     }
 
+    private fun tryToOpenFolder(file: File, targetFilename: String) {
+        doWithRWPermission({
+            openFileInner(file, targetFile = targetFilename) {
+                rv.snackbar(getString(R.string.dir_not_exist))
+            }
+        }, {
+            tryToOpenFolder(file, targetFilename)
+        })
+    }
+
     override fun openItemFile(item: DownloadItem) {
         val name = item.filename
         tryToOpen(File(item.path, name))
     }
 
+    override fun openItemFolder(item: DownloadItem) {
+        tryToOpenFolder(File(item.path), item.filename)
+    }
+
     override fun openItemFileNotExist(item: DownloadItem) {
-        toast(getString(R.string.download_file_not_exists))
+        rv.snackbar(getString(R.string.download_file_not_exists))
     }
 
     override fun pauseItem(item: DownloadItem) {
@@ -165,7 +173,7 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
                 1 -> showDeleteAssureDialog(item.id)
                 2 -> showReDownloadDialog(item.id)
                 3 -> mainViewModel.cancel(item.id)
-                4 -> tryToOpen(File(item.path))
+                4 -> tryToOpenFolder(File(item.path), item.filename)
                 5 -> {
                     // TODO 2019-06-12 @liuyuchuan: select
                 }

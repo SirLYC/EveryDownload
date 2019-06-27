@@ -20,8 +20,7 @@ const val FILE_TYPE_ARCHIVE = 6
 const val FILE_TYPE_OTHER = 7
 const val FILE_TYPE_UNKNOWN = -1
 
-@DrawableRes
-fun File.getIcon() = when (getType()) {
+fun typeToIcon(type: Int) = when (type) {
     FILE_TYPE_DIR -> R.drawable.ic_folder_open_primary_24dp
     FILE_TYPE_APK -> R.drawable.ic_android_primary_24dp
     FILE_TYPE_IMAGE -> R.drawable.ic_image_primary_24dp
@@ -31,6 +30,9 @@ fun File.getIcon() = when (getType()) {
     FILE_TYPE_ARCHIVE -> R.drawable.ic_archive_primary_24dp
     else -> R.drawable.ic_insert_drive_file_primary_24dp
 }
+
+@DrawableRes
+fun File.getIcon() = typeToIcon(getType())
 
 fun File.getType(): Int {
     if (isDirectory) return FILE_TYPE_DIR
@@ -47,3 +49,17 @@ fun File.getType(): Int {
         else -> FILE_TYPE_OTHER
     }
 }
+
+fun String.getFileType(): Int {
+    return when (substringAfterLast('.', "").toLowerCase()) {
+        "apk" -> FILE_TYPE_APK
+        "mp3", "" -> FILE_TYPE_AUDIO
+        "jpg", "jpeg", "png", "gif" -> FILE_TYPE_IMAGE
+        "avi", "rmvb", "mp4", "3gp", "asf", "m4u", "m4v", "mov", "mpe", "mpeg", "mpeg4", "mpga" -> FILE_TYPE_VIDEO
+        "txt", "java", "c", "cpp", "doc", "docx", "ppt", "pptx", "log", "m", "html", "css", "js", "ts", "dart", "py" -> FILE_TYPE_TXT
+        "zip", "gz", "tar", "rar" -> FILE_TYPE_ARCHIVE
+        else -> FILE_TYPE_OTHER
+    }
+}
+
+fun String.getFileIcon() = typeToIcon(getFileType())

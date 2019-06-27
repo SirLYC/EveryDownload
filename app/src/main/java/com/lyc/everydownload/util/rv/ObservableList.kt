@@ -25,7 +25,7 @@ class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableL
 
     override fun set(index: Int, element: T): T {
         val result = realList.set(index, element)
-        this.onChanged(index, 1, element)
+        this.onChanged(index, 1, null)
         return result
     }
 
@@ -111,5 +111,11 @@ class ObservableList<T>(private val realList: MutableList<T>) : AbstractMutableL
     fun replaceAll(elements: Collection<T>) {
         clear()
         addAll(elements)
+    }
+
+    inline fun disableCallback(func: ObservableList<T>.() -> Unit) {
+        val enable = enable
+        func()
+        this.enable = enable
     }
 }

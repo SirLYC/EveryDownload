@@ -111,19 +111,22 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
         }
 
         override fun onMoved(fromPosition: Int, toPosition: Int) {
-            itemList.enable = false
-            itemList[fromPosition + 1] = downloadingItemList[toPosition]
-            itemList[toPosition + 1] = downloadingItemList[fromPosition]
-            itemList.enable = true
+            itemList.disableCallback {
+                set(fromPosition + 1, downloadingItemList[toPosition])
+                set(toPosition + 1, downloadingItemList[fromPosition])
+            }
             itemList.onMoved(fromPosition + 1, toPosition + 1)
         }
 
         override fun onChanged(position: Int, count: Int, payload: Any?) {
             var i = 0
-            while (i < count) {
-                itemList[position + i + 1] = downloadingItemList[position + i]
-                i++
+            itemList.disableCallback {
+                while (i < count) {
+                    set(position + i + 1, downloadingItemList[position + i])
+                    i++
+                }
             }
+            itemList.onChanged(position + 1, count, payload)
         }
     }
 
@@ -146,20 +149,23 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
 
         override fun onMoved(fromPosition: Int, toPosition: Int) {
             val offset = finishedListStartOffset
-            itemList.enable = false
-            itemList[fromPosition + offset] = downloadingItemList[toPosition]
-            itemList[toPosition + offset] = downloadingItemList[fromPosition]
-            itemList.enable = true
+            itemList.disableCallback {
+                set(fromPosition + offset, downloadingItemList[toPosition])
+                set(toPosition + offset, fromPosition)
+            }
             itemList.onMoved(fromPosition + offset, toPosition + offset)
         }
 
         override fun onChanged(position: Int, count: Int, payload: Any?) {
             var i = 0
             val offset = finishedListStartOffset
-            while (i < count) {
-                itemList[position + i + offset] = finishedItemList[position + i]
-                i++
+            itemList.disableCallback {
+                while (i < count) {
+                    set(position + i + offset, finishedItemList[position + i])
+                    i++
+                }
             }
+            itemList.onChanged(position + offset, count, payload)
         }
     }
 
@@ -171,7 +177,7 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
 
     fun setup() {
         YCDownloader.registerDownloadListener(this)
-        YCDownloader.registerDownlaodTasksChangeListener(this)
+        YCDownloader.registerDownloadTasksChangeListener(this)
         refreshList()
     }
 
@@ -188,6 +194,8 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
             val downloadInfoList = YCDownloader.queryActiveDownloadInfoList()
             val finishedList = YCDownloader.queryFinishedDownloadInfoList()
             Async.main.execute {
+                val oldIdToItem = idToItem.clone()
+                idToItem.clear()
                 downloadingItemList.enable = false
                 finishedItemList.enable = false
                 downloadingItemList.clear()
@@ -204,6 +212,9 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
                     } else {
                         for (downloadInfo in downloadInfoList) {
                             val item = downloadInfoToItem(downloadInfo)
+                            oldIdToItem[item.id]?.run {
+                                item.bps = bps
+                            }
                             idToItem.put(downloadInfo.id!!, item)
                             downloadingItemList.add(item)
                             newList.add(item)
@@ -223,6 +234,9 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
                     } else {
                         for (downloadInfo in finishedList) {
                             val item = downloadInfoToItem(downloadInfo)
+                            oldIdToItem[item.id]?.run {
+                                item.bps = bps
+                            }
                             idToItem.put(downloadInfo.id!!, item)
                             finishedItemList.add(item)
                             newList.add(item)
@@ -237,14 +251,20 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
         }
     }
 
-    private fun doUpdateCallback(id: Long, updateCallback: (item: DownloadItem) -> DownloadItem) {
-        val item = idToItem.get(id)?.let(updateCallback) ?: return
+    private inline fun doUpdateCallback(id: Long, updateType: Int? = null, updateCallback: (item: DownloadItem) -> DownloadItem) {
+        val oldItem = idToItem.get(id)
+        val item = oldItem?.let(updateCallback) ?: return
         val index = downloadingItemList.indexOf(item)
         if (index == -1) {
             finishedItemList.remove(item)
             downloadingItemList.add(0, item)
         } else if (index != -1) {
-            downloadingItemList[index] = item
+            downloadingItemList.disableCallback {
+                if (!(oldItem === item)) {
+                    set(index, item)
+                }
+            }
+            downloadingItemList.onChanged(index, 1, updateType)
         }
     }
 
@@ -305,7 +325,7 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
     }
 
     override fun onDownloadProgressUpdate(id: Long, total: Long, cur: Long, bps: Double) {
-        doUpdateCallback(id) { item ->
+        doUpdateCallback(id, DownloadItem.UPDATE_PROGRESS) { item ->
             item.totalSize = total
             item.downloadedSize = cur
             item.bps = bps
@@ -314,7 +334,7 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
     }
 
     override fun onDownloadUpdateInfo(info: DownloadInfo) {
-        doUpdateCallback(info.id) {
+        doUpdateCallback(info.id, DownloadItem.UPDATE_INFO) {
             downloadInfoToItem(info).apply {
                 idToItem.put(it.id, this)
             }

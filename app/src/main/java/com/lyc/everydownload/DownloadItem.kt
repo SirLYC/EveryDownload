@@ -30,13 +30,8 @@ data class DownloadItem(
     }
 
     companion object {
-        fun itemWithId(id: Long) = DownloadItem(
-                id,
-                "",
-                "," +
-                        null,
-                "",
-                createdTime = Date()
-        )
+        const val UPDATE_PROGRESS = 0
+        const val UPDATE_INFO = 1
+        const val UPDATE_SELECT = 2
     }
 }

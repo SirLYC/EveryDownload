@@ -71,12 +71,15 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
 
     companion object {
         const val KEY_DIR = "KEY_DIR"
-        const val KEY_PATH = "PATH"
+        const val KEY_PATH = "KEY_PATH"
+        const val KEY_TARGET_FILE = "KEY_TARGET_FILE"
     }
 
     private lateinit var fileExploreViewModel: FileExploreViewModel
     private var isDir = false
     private var currentPath: String = ""
+    private var targetFile: File? = null
+    private var jumpToTargetFile = false
     private lateinit var adapter: ReactiveAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,14 +96,25 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
                 getArgs = true
                 isDir = savedInstanceState.getBoolean(KEY_DIR)
                 currentPath = savedInstanceState.getString(KEY_PATH) ?: ""
+                savedInstanceState.getString(KEY_TARGET_FILE)?.let {
+                    targetFile = File(it)
+                }
             }
         }
 
         if (!getArgs) {
             isDir = intent.getBooleanExtra(KEY_DIR, false)
             currentPath = intent.getStringExtra(KEY_PATH) ?: ""
+            intent.getStringExtra(KEY_TARGET_FILE)?.let {
+                targetFile = File(currentPath, it)
+            }
         }
 
+        targetFile?.run {
+            if (exists()) {
+                jumpToTargetFile = false
+            }
+        }
 
         adapter = ReactiveAdapter(fileExploreViewModel.itemList).apply {
             register(File::class, FileItemViewBinder(this@FileExploreActivity, this@FileExploreActivity))
@@ -124,8 +138,16 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
                 msv.showContent()
                 rv.visibility = INVISIBLE
                 var delayVis = false
-                fileExploreViewModel.lastViewDir()?.let { file ->
-                    val index = fileExploreViewModel.itemList.indexOf(file)
+                val targetFile = targetFile
+                val file = if (!jumpToTargetFile && targetFile != null) {
+                    jumpToTargetFile = true
+                    targetFile
+                } else {
+                    fileExploreViewModel.lastViewDir()
+                }
+
+                file?.let { jumpToFile ->
+                    val index = fileExploreViewModel.itemList.indexOf(jumpToFile)
                     if (index >= 0 && index < fileExploreViewModel.itemList.size) {
                         delayVis = true
                         rv.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
@@ -145,9 +167,9 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
                                 }
                             }
                         })
-
                     }
                 }
+
                 if (!delayVis) {
                     rv.visibility = VISIBLE
                 }
@@ -221,5 +243,6 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
         super.onSaveInstanceState(outState)
         outState.putBoolean(KEY_DIR, isDir)
         outState.putString(KEY_PATH, currentPath)
+        outState.putString(KEY_TARGET_FILE, targetFile?.name)
     }
 }

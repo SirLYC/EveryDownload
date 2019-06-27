@@ -6,27 +6,27 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.RecyclerView
 import com.lyc.downloader.DownloadTask.*
 import com.lyc.downloader.YCDownloader
 import com.lyc.downloader.utils.DownloadStringUtil
+import com.lyc.everydownload.util.getIcon
+import com.lyc.everydownload.util.rv.MutableItemViewBinder
+import com.lyc.everydownload.util.rv.MutableViewHolder
 import com.lyc.everydownload.util.toDateString
 import com.lyc.everydownload.util.toTimeString
 import kotlinx.android.synthetic.main.item_download.view.*
-import me.drakeet.multitype.ItemViewBinder
 import java.io.File
+import kotlin.math.max
 
 /**
  * Created by Liu Yuchuan on 2019/5/20.
  */
 class DownloadItemViewBinder(
         private val onItemButtonClickListener: OnItemButtonClickListener
-) : ItemViewBinder<DownloadItem, DownloadItemViewBinder.ViewHolder>() {
-    override fun onBindViewHolder(holder: ViewHolder, item: DownloadItem) {
-        holder.bind(item)
-    }
+) : MutableItemViewBinder<DownloadItem, DownloadItemViewBinder.ViewHolder>() {
 
     override fun onCreateViewHolder(inflater: LayoutInflater, parent: ViewGroup): ViewHolder {
         return ViewHolder(inflater.inflate(R.layout.item_download, parent, false), onItemButtonClickListener)
@@ -35,13 +35,13 @@ class DownloadItemViewBinder(
     class ViewHolder(
             itemView: View,
             private val onItemButtonClickListener: OnItemButtonClickListener
-    ) :
-            RecyclerView.ViewHolder(itemView), View.OnClickListener, View.OnLongClickListener {
+    ) : MutableViewHolder<DownloadItem>(itemView), View.OnClickListener, View.OnLongClickListener {
 
         override fun onLongClick(v: View) = item?.let {
             onItemButtonClickListener.onItemLongClicked(it, v)
         } ?: false
 
+        private val icon: ImageView = itemView.iv_icon
         private val name: TextView = itemView.name
         private val state: TextView = itemView.state
         private val oldStateColors = state.textColors
@@ -57,22 +57,47 @@ class DownloadItemViewBinder(
             itemView.setOnClickListener(this)
         }
 
-        private var item: DownloadItem? = null
+        override fun onBind(oldItem: DownloadItem?, newItem: DownloadItem, payloads: List<Any>?) {
+            val updateAll = oldItem != newItem || oldItem.id != newItem.id || payloads == null || payloads.isEmpty()
 
-        internal fun bind(item: DownloadItem) {
-            this.item = item
-            name.text = item.filename
+            if (updateAll) {
+                updateBasicInfo(newItem)
+                updateState(newItem)
+            } else {
+                payloads?.forEach {
+                    when (it) {
+                        DownloadItem.UPDATE_PROGRESS -> {
+                            onlyUpdateProgress(newItem)
+                        }
+
+                        DownloadItem.UPDATE_INFO -> {
+                            when (CONNECTING) {
+                                newItem.downloadState -> updateBasicInfo(newItem)
+                                else -> updateState(newItem)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun updateBasicInfo(newItem: DownloadItem) {
+            name.text = newItem.filename
+            icon.setImageResource(File(newItem.path, newItem.filename).getIcon())
+        }
+
+        private fun updateState(newItem: DownloadItem) {
             val progress: Int
-            val cur = item.downloadedSize
-            val total = item.totalSize.toDouble()
+            val cur = newItem.downloadedSize
+            val total = newItem.totalSize.toDouble()
 
-            val downloadState = item.downloadState
+            val downloadState = newItem.downloadState
             var stateString: String?
             if (total <= 0 || downloadState == FINISH) {
                 progress = 0
                 stateString = DownloadStringUtil.byteToString(cur.toDouble())
             } else {
-                progress = Math.max((cur / total * 100).toInt(), 0)
+                progress = max((cur / total * 100).toInt(), 0)
                 stateString = DownloadStringUtil.byteToString(cur.toDouble())
                 if (total > 0) {
                     stateString += "/${DownloadStringUtil.byteToString(total)}"
@@ -80,21 +105,20 @@ class DownloadItemViewBinder(
             }
 
             downloadProgressBar.progress = progress
-
-            when (item.downloadState) {
+            when (newItem.downloadState) {
                 PENDING, CONNECTING -> {
                     stateString = "$stateString | 连接中"
                 }
                 RUNNING -> {
                     val leftTimeString =
-                            if (total > 0 && item.bps > 0) {
-                                " | ${(total / item.bps).toTimeString()}"
+                            if (total > 0 && newItem.bps > 0) {
+                                " | ${(total / newItem.bps).toTimeString()}"
                             } else if (total > 0) {
                                 " | 超过一天"
                             } else {
                                 ""
                             }
-                    stateString = "$stateString | ${DownloadStringUtil.bpsToString(item.bps)}$leftTimeString"
+                    stateString = "$stateString | ${DownloadStringUtil.bpsToString(newItem.bps)}$leftTimeString"
                 }
                 STOPPING -> {
                     stateString = "$stateString | 正在停止"
@@ -103,7 +127,7 @@ class DownloadItemViewBinder(
                 WAITING -> stateString = "$stateString | 等待中"
                 CANCELED -> stateString = "已取消"
                 ERROR, FATAL_ERROR -> {
-                    var errorMessage: String? = YCDownloader.translateErrorCode(item.errorCode!!)
+                    var errorMessage: String? = YCDownloader.translateErrorCode(newItem.errorCode!!)
                     if (errorMessage == null) {
                         errorMessage = "下载失败"
                     }
@@ -114,10 +138,10 @@ class DownloadItemViewBinder(
             downloadProgressBar.isIndeterminate = (total <= 0 && (downloadState == RUNNING || downloadState == CONNECTING))
 
             button.isEnabled = downloadState != STOPPING
-            if (item.downloadState == FINISH) {
+            if (newItem.downloadState == FINISH) {
                 button.setImageDrawable(ContextCompat
                         .getDrawable(button.context, R.drawable.ic_folder_open_primary_24dp))
-                item.finishedTime?.let {
+                newItem.finishedTime?.let {
                     stateString = "$stateString | ${it.toDateString()}"
                 }
                 state.text = stateString
@@ -147,17 +171,54 @@ class DownloadItemViewBinder(
             }
         }
 
+        // state == RUNNING
+        private fun onlyUpdateProgress(newItem: DownloadItem) {
+            val progress: Int
+            val cur = newItem.downloadedSize
+            val total = newItem.totalSize.toDouble()
+
+            val downloadState = newItem.downloadState
+            var stateString: String?
+            if (total <= 0 || downloadState == FINISH) {
+                progress = 0
+                stateString = DownloadStringUtil.byteToString(cur.toDouble())
+            } else {
+                progress = max((cur / total * 100).toInt(), 0)
+                stateString = DownloadStringUtil.byteToString(cur.toDouble())
+                if (total > 0) {
+                    stateString += "/${DownloadStringUtil.byteToString(total)}"
+                }
+            }
+            val leftTimeString =
+                    if (total > 0 && newItem.bps > 0) {
+                        " | ${(total / newItem.bps).toTimeString()}"
+                    } else if (total > 0) {
+                        " | 超过一天"
+                    } else {
+                        ""
+                    }
+            stateString = "$stateString | ${DownloadStringUtil.bpsToString(newItem.bps)}$leftTimeString"
+            downloadProgressBar.visibility = VISIBLE
+            downloadProgressBar.progress = progress
+            downloadProgressBar.isIndeterminate = (total <= 0 && (downloadState == RUNNING || downloadState == CONNECTING))
+            state.text = stateString
+        }
+
         override fun onClick(v: View) {
             item?.let {
                 val state = it.downloadState
                 if (v.id == R.id.button || v == itemView) {
                     when (state) {
                         FINISH -> {
-                            val name = it.filename
-                            if (File(it.path, name).exists()) {
-                                onItemButtonClickListener.openItemFile(it)
+                            if (v == itemView) {
+                                val name = it.filename
+                                if (File(it.path, name).exists()) {
+                                    onItemButtonClickListener.openItemFile(it)
+                                } else {
+                                    onItemButtonClickListener.openItemFileNotExist(it)
+                                }
                             } else {
-                                onItemButtonClickListener.openItemFileNotExist(it)
+                                onItemButtonClickListener.openItemFolder(it)
                             }
                         }
                         PAUSED, ERROR, FATAL_ERROR -> onItemButtonClickListener.startItem(it)
@@ -171,6 +232,8 @@ class DownloadItemViewBinder(
 
     interface OnItemButtonClickListener {
         fun openItemFile(item: DownloadItem)
+
+        fun openItemFolder(item: DownloadItem)
 
         fun openItemFileNotExist(item: DownloadItem)
 

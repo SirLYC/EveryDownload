@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import com.lyc.everydownload.file.FileExploreActivity
 import java.io.File
 
 /**
@@ -45,9 +46,26 @@ inline fun Context.openFile(
     }
 }
 
-inline fun Fragment.chooseFilePath() {
+inline fun Context.openFileInner(
+        file: File,
+        targetFile: String? = null,
+        fileNotExistAction: () -> Unit = {}
+) {
+    if (!file.exists()) {
+        fileNotExistAction()
+        return
+    }
+
+    val intent = Intent(this, FileExploreActivity::class.java)
+    intent.putExtra(FileExploreActivity.KEY_PATH, file.path)
+    intent.putExtra(FileExploreActivity.KEY_TARGET_FILE, targetFile)
+
+    startActivity(intent)
+}
+
+fun Fragment.chooseFilePath() {
     val intent = Intent(Intent.ACTION_GET_CONTENT)
     intent.type = "*/*"
-    intent.addCategory(Intent.CATEGORY_OPENABLE);
+    intent.addCategory(Intent.CATEGORY_OPENABLE)
     startActivityForResult(intent, 1)
 }
