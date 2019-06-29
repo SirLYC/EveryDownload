@@ -206,19 +206,20 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
                     it.count = downloadInfoList.size
                     newList.add(it)
                 }
+
+                for (downloadInfo in downloadInfoList) {
+                    val item = downloadInfoToItem(downloadInfo)
+                    oldIdToItem[item.id]?.run {
+                        item.bps = bps
+                    }
+                    idToItem.put(downloadInfo.id!!, item)
+                    downloadingItemList.add(item)
+                }
                 if (expandDownloading) {
                     if (downloadInfoList.isEmpty()) {
                         newList.add(downloadEmptyItem)
                     } else {
-                        for (downloadInfo in downloadInfoList) {
-                            val item = downloadInfoToItem(downloadInfo)
-                            oldIdToItem[item.id]?.run {
-                                item.bps = bps
-                            }
-                            idToItem.put(downloadInfo.id!!, item)
-                            downloadingItemList.add(item)
-                            newList.add(item)
-                        }
+                        newList.addAll(downloadingItemList)
                     }
                     downloadingItemList.enable = true
                 }
@@ -228,19 +229,19 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
                     it.count = finishedList.size
                     newList.add(it)
                 }
+                for (downloadInfo in finishedList) {
+                    val item = downloadInfoToItem(downloadInfo)
+                    oldIdToItem[item.id]?.run {
+                        item.bps = bps
+                    }
+                    idToItem.put(downloadInfo.id!!, item)
+                    finishedItemList.add(item)
+                }
                 if (expandFinished) {
                     if (finishedList.isEmpty()) {
                         newList.add(finishedEmptyItem)
                     } else {
-                        for (downloadInfo in finishedList) {
-                            val item = downloadInfoToItem(downloadInfo)
-                            oldIdToItem[item.id]?.run {
-                                item.bps = bps
-                            }
-                            idToItem.put(downloadInfo.id!!, item)
-                            finishedItemList.add(item)
-                            newList.add(item)
-                        }
+                        newList.addAll(finishedItemList)
                     }
                     finishedItemList.enable = true
                 }
@@ -255,7 +256,7 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
         val oldItem = idToItem.get(id)
         val item = oldItem?.let(updateCallback) ?: return
         val index = downloadingItemList.indexOf(item)
-        if (index == -1) {
+        if (index == -1 && item.downloadState != FINISH) {
             if (finishedItemList.remove(item)) {
                 finishedHeader.count--
                 itemList.onChanged(finishedListStartOffset - 1, 1, DownloadGroupHeader.UPDATE_COUNT)

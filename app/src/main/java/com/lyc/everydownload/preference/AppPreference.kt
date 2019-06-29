@@ -5,8 +5,7 @@ import android.content.*
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED
-import android.net.NetworkCapabilities.TRANSPORT_WIFI
+import android.net.NetworkCapabilities.*
 import android.net.NetworkRequest
 import android.net.wifi.WifiManager
 import android.os.Build
@@ -78,10 +77,13 @@ object AppPreference : SharedPreferences.OnSharedPreferenceChangeListener {
             if (Build.VERSION.SDK_INT >= 23) {
                 val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager?
                 cm?.registerNetworkCallback(
-                        NetworkRequest.Builder().addCapability(NET_CAPABILITY_VALIDATED).addTransportType(TRANSPORT_WIFI).build(),
+                        NetworkRequest.Builder()
+                                .addCapability(NET_CAPABILITY_VALIDATED)
+                                .addCapability(NET_CAPABILITY_INTERNET)
+                                .addTransportType(TRANSPORT_WIFI)
+                                .build(),
                         object : ConnectivityManager.NetworkCallback() {
                             override fun onCapabilitiesChanged(network: Network?, networkCapabilities: NetworkCapabilities?) {
-                                logD("onCap change!")
                                 updateAllowDownload(appContext)
                             }
                         })
