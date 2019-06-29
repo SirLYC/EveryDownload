@@ -6,4 +6,10 @@
         android:icon="@drawable/ic_add_black_24dp"
         android:title="@string/download"
         app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/preference"
+        android:icon="@drawable/ic_settings_white_24dp"
+        android:title="@string/preference"
+        app:showAsAction="never" />
 </menu>

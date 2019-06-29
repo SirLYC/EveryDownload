@@ -10,6 +10,7 @@ import android.view.inputmethod.EditorInfo.IME_NULL
 import androidx.core.net.toFile
 import androidx.core.widget.doAfterTextChanged
 import com.lyc.everydownload.file.FileExploreActivity
+import com.lyc.everydownload.preference.AppPreference
 import com.lyc.everydownload.util.doWithRWPermission
 import com.lyc.everydownload.util.requestForResult
 import com.lyc.everydownload.util.toNormalUrl
@@ -96,6 +97,8 @@ class StartDownloadViewPack(context: Context,
             filename = null
         }
 
+        AppPreference.lastDownloadDir = path
+
         startDownloadAction(url.toString(), path, filename)
     }
 
@@ -129,6 +132,14 @@ class StartDownloadViewPack(context: Context,
 
             return@setOnEditorActionListener false
         }
+    }
 
+    init {
+        val path = if (AppPreference.useLastDownloadDir) {
+            AppPreference.lastDownloadDir ?: AppPreference.defaultDownloadDir
+        } else {
+            AppPreference.defaultDownloadDir
+        }
+        pathEdit.setText(path)
     }
 }

@@ -31,6 +31,7 @@ class FileExploreViewModel : ViewModel() {
 
     fun setup(root: File, currentPath: String, onlyDir: Boolean) {
         this.root = root
+        this.onlyDir = onlyDir
         if (!root.exists() || !root.isDirectory) {
             throw IllegalArgumentException("root must be an existing directory!")
         }
@@ -41,7 +42,6 @@ class FileExploreViewModel : ViewModel() {
                 chDir(root)
             }
         }
-        this.onlyDir = onlyDir
     }
 
     fun refresh() {

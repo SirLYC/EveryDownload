@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_download_task_manage">任务管理</string>
+    <string name="key_max_running_tasks">key_max_running_tasks</string>
+    <string name="title_max_running_tasks">同时下载最大的任务数</string>
+    <string name="title_network_setting">网络设置</string>
+    <string name="key_speed_limit">key_speed_limit</string>
+    <string name="title_speed_limit">下载限速</string>
+    <string name="key_allow_operator_network">key_allow_operator_network</string>
+    <string name="title_allow_operator_network">允许运营商网络下载</string>
+    <string name="title_settings">应用设置</string>
+    <string name="title_download_background">后台下载</string>
+    <string name="key_download_background">key_download_background</string>
+    <string name="summary_off_download_background">关闭应用主界面后暂停下载</string>
+    <string name="summary_on_download_background">关闭应用主界面后继续下载</string>
+    <string name="summary_off_avoid_frame_drop">已关闭（如果下载界面卡顿建议开启）</string>
+    <string name="summary_on_avoid_frame_drop">已开启</string>
+    <string name="title_avoid_frame_drop">控制进度更新速度</string>
+    <string name="key_avoid_frame_drop">key_avoid_frame_drop</string>
+    <string name="summary_off_allow_operator_network">仅允许WIFI下载</string>
+    <string name="summary_on_allow_operator_network">允许运营商网络下载（可能会耗费超额流量）</string>
+    <string name="title_folder_setting">目录设置</string>
+    <string name="title_default_download_dir">默认下载目录</string>
+    <string name="key_use_last_download">key_use_last_download</string>
+    <string name="summary_off_use_last_download">新建任务时使用默认目录</string>
+    <string name="summary_on_use_last_download">新建任务时使用上次下载目录</string>
+    <string name="title_use_last_download">使用上次下载目录</string>
+    <string name="key_default_download_dir">key_default_download_dir</string>
+    <string name="hint_speed_limit">单位KB/s，0为不限速，范围0&#8211;102400</string>
+</resources>

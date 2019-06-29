@@ -1,10 +1,13 @@
 package com.lyc.everydownload
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.CheckBox
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.Observer
@@ -13,6 +16,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.lyc.downloader.DownloadTask.*
+import com.lyc.downloader.YCDownloader
+import com.lyc.everydownload.preference.AppPreference
+import com.lyc.everydownload.preference.PreferenceActivity
 import com.lyc.everydownload.util.*
 import com.lyc.everydownload.util.rv.ReactiveAdapter
 import com.lyc.everydownload.util.rv.VerticalItemDecoration
@@ -112,6 +118,9 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
         return if (item.itemId == R.id.add) {
             StartDownloadDialog().show(supportFragmentManager, "startDownload")
             true
+        } else if (item.itemId == R.id.preference) {
+            startActivity(Intent(this, PreferenceActivity::class.java))
+            true
         } else super.onOptionsItemSelected(item)
 
     }
@@ -182,6 +191,28 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
         }
         popupMenu.show()
         return true
+    }
+
+    override fun onBackPressed() {
+        if (AppPreference.backgroundDownload) {
+            super.onBackPressed()
+        } else if (ActiveDownloadListHolder.hasAnyDownloadingTask()) {
+            val checkBox = CheckBox(this)
+            checkBox.text = getString(R.string.continue_downloading)
+            AlertDialog.Builder(this)
+                    .setView(checkBox)
+                    .setMessage(getString(R.string.exit_prompt))
+                    .setPositiveButton(R.string.exit) { _, _ ->
+                        if (checkBox.isChecked) {
+                            AppPreference.backgroundDownload = true
+                        } else {
+                            YCDownloader.pauseAll()
+                        }
+                        super.onBackPressed()
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+        }
     }
 
     private fun showDeleteAssureDialog(id: Long) {

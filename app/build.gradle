@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion 28
@@ -12,10 +12,38 @@ android {
         versionName buildInfo['versionName']
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+
+    signingConfigs {
+        release {
+            def signConfig = rootProject.file('keys/keystore.properties')
+            if (signConfig.exists()) {
+                Properties props = new Properties()
+                props.load(new FileInputStream(signConfig))
+                storeFile file(props['KEYSTORE_FILE'])
+                storePassword props['KEYSTORE_PWD']
+                keyAlias props['KEY_ALIAS']
+                keyPassword props['KEY_PWD']
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+        }
+
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "EveryDownload-${variant.buildType.name}-${defaultConfig.versionName}.apk"
         }
     }
 
@@ -30,6 +58,7 @@ dependencies {
     implementation deps['downloader']
     implementation deps['appcompact']
     implementation deps['core']
+    implementation deps['preference']
     implementation deps['material']
     implementation deps['constraintlayout']
     implementation deps['lifecycle-extensions']

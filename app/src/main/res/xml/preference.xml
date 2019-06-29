@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:icon="@drawable/ic_android_gray_24dp"
+        android:title="@string/title_settings">
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="@string/key_download_background"
+            android:summaryOff="@string/summary_off_download_background"
+            android:summaryOn="@string/summary_on_download_background"
+            android:title="@string/title_download_background" />
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="@string/key_avoid_frame_drop"
+            android:summaryOff="@string/summary_off_avoid_frame_drop"
+            android:summaryOn="@string/summary_on_avoid_frame_drop"
+            android:title="@string/title_avoid_frame_drop" />
+    </PreferenceCategory>
+
+
+    <PreferenceCategory
+        android:icon="@drawable/ic_file_download_gray_24dp"
+        android:title="@string/title_download_task_manage">
+        <ListPreference
+            android:defaultValue="4"
+            android:key="@string/key_max_running_tasks"
+            android:title="@string/title_max_running_tasks" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:icon="@drawable/ic_network_cell_gray_24dp"
+        android:title="@string/title_network_setting">
+        <EditTextPreference
+            android:defaultValue="0"
+            android:hint="@string/hint_speed_limit"
+            android:inputType="number"
+            android:key="@string/key_speed_limit"
+            android:title="@string/title_speed_limit" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="@string/key_allow_operator_network"
+            android:summaryOff="@string/summary_off_allow_operator_network"
+            android:summaryOn="@string/summary_on_allow_operator_network"
+            android:title="@string/title_allow_operator_network" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:icon="@drawable/ic_folder_gray_24dp"
+        android:title="@string/title_folder_setting">
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="@string/key_use_last_download"
+            android:summaryOff="@string/summary_off_use_last_download"
+            android:summaryOn="@string/summary_on_use_last_download"
+            android:title="@string/title_use_last_download" />
+
+        <!--suppress AndroidElementNotAllowed -->
+        <com.lyc.everydownload.preference.SingleValuePreference
+            android:key="@string/key_default_download_dir"
+            android:title="@string/title_default_download_dir" />
+    </PreferenceCategory>
+    o
+</PreferenceScreen>

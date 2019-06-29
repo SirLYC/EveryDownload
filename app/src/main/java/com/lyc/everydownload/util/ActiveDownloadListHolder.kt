@@ -256,8 +256,15 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
         val item = oldItem?.let(updateCallback) ?: return
         val index = downloadingItemList.indexOf(item)
         if (index == -1) {
-            finishedItemList.remove(item)
-            downloadingItemList.add(0, item)
+            if (finishedItemList.remove(item)) {
+                finishedHeader.count--
+                itemList.onChanged(finishedListStartOffset - 1, 1, DownloadGroupHeader.UPDATE_COUNT)
+            }
+            addToListBy(item, downloadingItemList, {
+                item.createdTime <= item.createdTime
+            })
+            downloadingHeader.count++
+            itemList.onChanged(0, 1, DownloadGroupHeader.UPDATE_COUNT)
         } else if (index != -1) {
             downloadingItemList.disableCallback {
                 if (!(oldItem === item)) {
@@ -408,4 +415,6 @@ object ActiveDownloadListHolder : DownloadListener, DownloadTasksChangeListener 
                 info.errorCode
         )
     }
+
+    fun hasAnyDownloadingTask() = downloadingItemList.isNotEmpty()
 }

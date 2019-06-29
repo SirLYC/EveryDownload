@@ -44,4 +44,9 @@
     <string name="empty_downloading_list">没有下载任务～</string>
     <string name="title_finished">已完成</string>
     <string name="title_downloading">正在下载</string>
+    <string name="preference">偏好设置</string>
+    <string name="no_speed_limit">不限速</string>
+    <string name="exit">退出</string>
+    <string name="continue_downloading">退出后继续下载</string>
+    <string name="exit_prompt">下载任务未完成，是否退出？</string>
 </resources>

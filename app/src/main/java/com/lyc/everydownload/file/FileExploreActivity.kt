@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.view.MenuItem
 import android.view.View
 import android.view.View.*
 import android.view.ViewTreeObserver
@@ -86,6 +87,7 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_file_explore)
         setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         fileExploreViewModel = ViewModelProviders.of(this).get(FileExploreViewModel::class.java)
         val rootFile = Environment.getExternalStorageDirectory() ?: File("/")
@@ -236,6 +238,16 @@ class FileExploreActivity : AppCompatActivity(), OnItemClickListener<File>, OnIt
             fileExploreViewModel.back()
         } else {
             super.onBackPressed()
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            android.R.id.home -> {
+                onBackPressed()
+                true
+            }
+            else -> false
         }
     }
 

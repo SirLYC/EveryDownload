@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import com.lyc.downloader.DownloadTask.*
 import com.lyc.downloader.YCDownloader
 import com.lyc.downloader.utils.DownloadStringUtil
+import com.lyc.everydownload.preference.AppPreference
 import com.lyc.everydownload.util.getIcon
 import com.lyc.everydownload.util.rv.MutableItemViewBinder
 import com.lyc.everydownload.util.rv.MutableViewHolder
@@ -124,7 +125,10 @@ class DownloadItemViewBinder(
                     stateString = "$stateString | 正在停止"
                 }
                 PAUSED -> stateString = "$stateString | 已暂停"
-                WAITING -> stateString = "$stateString | 等待中"
+                WAITING -> stateString = "$stateString | ${
+                if (!AppPreference.isAllowOperatorNetwork && !AppPreference.isConnectedToWifi) "等待WIFI连接"
+                else if (AppPreference.isAllowOperatorNetwork && !AppPreference.isConnectedToNetwork) "等待网络连接"
+                else "等待中"}"
                 CANCELED -> stateString = "已取消"
                 ERROR, FATAL_ERROR -> {
                     var errorMessage: String? = YCDownloader.translateErrorCode(newItem.errorCode!!)
