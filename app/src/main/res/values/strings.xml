@@ -49,4 +49,9 @@
     <string name="exit">退出</string>
     <string name="continue_downloading">退出后继续下载</string>
     <string name="exit_prompt">下载任务未完成，是否退出？</string>
+    <string name="copy_success">已复制</string>
+    <string name="copy_failed">复制失败</string>
+    <string name="open_download_file">无法打开文件</string>
+    <string name="share_to">分享至</string>
+    <string name="share_failed">分享失败</string>
 </resources>

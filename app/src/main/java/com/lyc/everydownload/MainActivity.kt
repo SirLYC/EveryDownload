@@ -6,16 +6,20 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.CheckBox
+import android.widget.FrameLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.view.setPadding
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
-import com.lyc.downloader.DownloadTask.*
+import com.lyc.downloader.DownloadTask.FINISH
+import com.lyc.downloader.DownloadTask.PAUSED
 import com.lyc.downloader.YCDownloader
 import com.lyc.everydownload.preference.AppPreference
 import com.lyc.everydownload.preference.PreferenceActivity
@@ -115,19 +119,27 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return if (item.itemId == R.id.add) {
-            StartDownloadDialog().show(supportFragmentManager, "startDownload")
-            true
-        } else if (item.itemId == R.id.preference) {
-            startActivity(Intent(this, PreferenceActivity::class.java))
-            true
-        } else super.onOptionsItemSelected(item)
+        return when {
+            item.itemId == R.id.add -> {
+                StartDownloadDialog().show(supportFragmentManager, "startDownload")
+                true
+            }
+            item.itemId == R.id.preference -> {
+                startActivity(Intent(this, PreferenceActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
 
     }
 
     private fun tryToOpen(file: File) {
         doWithRWPermission({
-            openFile(file)
+            openFile(file, fileNotExistAction = {
+                rv.snackbar(getString(R.string.download_file_not_exists))
+            }, openFailAction = {
+                rv.snackbar(getString(R.string.open_download_file))
+            })
         }, {
             tryToOpen(file)
         })
@@ -168,24 +180,29 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
         val state = item.downloadState
         val popupMenu = PopupMenu(this, view)
         val menu = popupMenu.menu
-        menu.add(0, 1, 0, "删除")
+
+        if (state == FINISH) {
+            menu.add(0, 1, 0, "分享")
+        }
+        menu.add(0, 2, 0, "删除")
         when (state) {
-            PAUSED, FINISH -> menu.add(0, 2, 0, "重新下载")
+            PAUSED, FINISH -> menu.add(0, 3, 0, "重新下载")
         }
-        if (state != FINISH && state != CANCELED) {
-            menu.add(0, 3, 0, "取消")
-        }
-        menu.add(0, 4, 0, "打开文件夹")
-        menu.add(0, 5, 0, "选择")
+        menu.add(0, 4, 0, "复制下载链接")
+        menu.add(0, 5, 0, "复制存放路径")
+        menu.add(0, 6, 0, "打开文件夹")
         popupMenu.setOnMenuItemClickListener {
             when (it.itemId) {
-                1 -> showDeleteAssureDialog(item.id)
-                2 -> showReDownloadDialog(item.id)
-                3 -> mainViewModel.cancel(item.id)
-                4 -> tryToOpenFolder(File(item.path), item.filename)
-                5 -> {
-                    // TODO 2019-06-12 @liuyuchuan: select
-                }
+                1 -> shareFile(File(item.path, item.filename), fileNotExistAction = {
+                    rv.snackbar(getString(R.string.dir_not_exist))
+                }, shareFailAction = {
+                    rv.snackbar(getString(R.string.share_failed))
+                })
+                2 -> showDeleteAssureDialog(item.id)
+                3 -> showReDownloadDialog(item.id)
+                4 -> rv.copyPlainWithSnackBarTip(item.url)
+                5 -> rv.copyPlainWithSnackBarTip(item.path)
+                6 -> tryToOpenFolder(File(item.path), item.filename)
             }
             true
         }
@@ -194,13 +211,15 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
     }
 
     override fun onBackPressed() {
-        if (AppPreference.backgroundDownload) {
-            super.onBackPressed()
-        } else if (ActiveDownloadListHolder.hasAnyDownloadingTask()) {
+        logD("back:${AppPreference.backgroundDownload}")
+        if (!AppPreference.backgroundDownload && ActiveDownloadListHolder.hasAnyDownloadingTask()) {
+            val frameLayout = FrameLayout(this)
+            frameLayout.setPadding((resources.displayMetrics.density * 32).toInt())
             val checkBox = CheckBox(this)
             checkBox.text = getString(R.string.continue_downloading)
+            frameLayout.addView(checkBox, FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
             AlertDialog.Builder(this)
-                    .setView(checkBox)
+                    .setView(frameLayout)
                     .setMessage(getString(R.string.exit_prompt))
                     .setPositiveButton(R.string.exit) { _, _ ->
                         if (checkBox.isChecked) {
@@ -212,6 +231,8 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
                     }
                     .setNegativeButton(R.string.cancel, null)
                     .show()
+        } else {
+            super.onBackPressed()
         }
     }
 

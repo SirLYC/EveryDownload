@@ -55,6 +55,7 @@ object AppPreference : SharedPreferences.OnSharedPreferenceChangeListener {
         appContext = context.applicationContext
         preferences = PreferenceManager.getDefaultSharedPreferences(appContext)
         preferences.registerOnSharedPreferenceChangeListener(this)
+        backgroundDownload = preferences.getBoolean(appContext.getString(R.string.key_download_background), backgroundDownload)
         maxRunningTask = preferences.getParsedInt(appContext.getString(R.string.key_max_running_tasks), maxRunningTask)
         speedLimit = preferences.getParsedLong(appContext.getString(R.string.key_speed_limit), speedLimit)
         allowOperatorDownload = preferences.getBoolean(appContext.getString(R.string.key_allow_operator_network), allowOperatorDownload)

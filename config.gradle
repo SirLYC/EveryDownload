@@ -28,6 +28,8 @@ ext {
             'downloader'          : 'com.github.SirLYC:YC-Downloader:0.7.0-beta',
             'rxpermissions'       : 'com.github.tbruyelle:rxpermissions:0.10.2',
             'rxjava'              : 'io.reactivex.rxjava2:rxjava:2.2.9',
+            'glide'               : 'com.github.bumptech.glide:glide:4.9.0',
+            'glide-compiler'      : 'com.github.bumptech.glide:compiler:4.9.0',
 
             'junit'               : 'junit:junit:4.13-beta-2',
 

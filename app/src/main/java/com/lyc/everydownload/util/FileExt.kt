@@ -1,7 +1,14 @@
 package com.lyc.everydownload.util
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.webkit.MimeTypeMap
 import androidx.annotation.DrawableRes
+import androidx.core.content.FileProvider
 import com.lyc.everydownload.R
+import com.lyc.everydownload.file.FileExploreActivity
 import java.io.File
 
 /**
@@ -63,3 +70,88 @@ fun String.getFileType(): Int {
 }
 
 fun String.getFileIcon() = typeToIcon(getFileType())
+
+inline fun Context.openFile(
+        file: File,
+        fileNotExistAction: () -> Unit = {},
+        openFailAction: () -> Unit = {}
+) {
+    if (!file.exists()) {
+        fileNotExistAction()
+        return
+    }
+
+    val intent = Intent(Intent.ACTION_VIEW)
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    val uri = if (Build.VERSION.SDK_INT >= 24) {
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        FileProvider.getUriForFile(this, "com.lyc.everydownload.fileprovider", file)
+    } else {
+        Uri.fromFile(file)
+    }
+
+    val type = (MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension)
+            ?: "*/*")
+    logD("openFile, uri = $uri, type = $type")
+    intent.setDataAndType(uri, type)
+
+    try {
+        startActivity(intent)
+    } catch (e: Exception) {
+        openFailAction()
+        logE("openFile", e)
+    }
+}
+
+inline fun Context.openFileInner(
+        file: File,
+        targetFile: String? = null,
+        fileNotExistAction: () -> Unit = {}
+) {
+    if (!file.exists()) {
+        fileNotExistAction()
+        return
+    }
+
+    val intent = Intent(this, FileExploreActivity::class.java)
+    intent.putExtra(FileExploreActivity.KEY_PATH, file.path)
+    intent.putExtra(FileExploreActivity.KEY_TARGET_FILE, targetFile)
+
+    startActivity(intent)
+}
+
+inline fun Context.shareFile(
+        file: File,
+        fileNotExistAction: () -> Unit = {},
+        shareFailAction: () -> Unit = {}
+) {
+    if (!file.exists()) {
+        fileNotExistAction()
+        return
+    }
+
+    val intent = Intent(Intent.ACTION_SEND)
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    val uri = if (Build.VERSION.SDK_INT >= 24) {
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        FileProvider.getUriForFile(this, "com.lyc.everydownload.fileprovider", file)
+    } else {
+        Uri.fromFile(file)
+    }
+
+    intent.putExtra(Intent.EXTRA_STREAM, uri.toString())
+
+    val type = (MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension)
+            ?: "*/*")
+    logD("openFile, uri = $uri, type = $type")
+    intent.setDataAndType(uri, type)
+
+    try {
+        startActivity(Intent.createChooser(intent, getString(R.string.share_to)))
+    } catch (e: Exception) {
+        shareFailAction()
+        logE("openFile", e)
+    }
+}
