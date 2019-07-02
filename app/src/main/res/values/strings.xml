@@ -54,4 +54,12 @@
     <string name="open_download_file">无法打开文件</string>
     <string name="share_to">分享至</string>
     <string name="share_failed">分享失败</string>
+    <string name="finish">完成</string>
+    <string name="error_show_content">暂时无法显示内容</string>
+    <string name="filename">文件名</string>
+    <string name="path">保存路径</string>
+    <string name="filne_length">文件大小</string>
+    <string name="create_time">创建时间</string>
+    <string name="download_content">下载详情</string>
+    <string name="title_url">下载地址</string>
 </resources>

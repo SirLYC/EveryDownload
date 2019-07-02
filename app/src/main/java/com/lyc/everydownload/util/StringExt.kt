@@ -16,7 +16,7 @@ private val thisYearFmt = SimpleDateFormat("MM-dd HH:mm")
 
 fun Double.toTimeString(): String {
     var d = this
-    if (d == Double.NaN || d == Double.POSITIVE_INFINITY ||
+    if (d.isNaN() || d == Double.POSITIVE_INFINITY ||
             d == Double.NEGATIVE_INFINITY || d == Double.MAX_VALUE) {
         return "下载中"
     }

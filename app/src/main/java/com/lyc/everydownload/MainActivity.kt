@@ -191,6 +191,7 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
         menu.add(0, 4, 0, "复制下载链接")
         menu.add(0, 5, 0, "复制存放路径")
         menu.add(0, 6, 0, "打开文件夹")
+        menu.add(0, 7, 0, "显示详情")
         popupMenu.setOnMenuItemClickListener {
             when (it.itemId) {
                 1 -> shareFile(File(item.path, item.filename), fileNotExistAction = {
@@ -203,6 +204,7 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
                 4 -> rv.copyPlainWithSnackBarTip(item.url)
                 5 -> rv.copyPlainWithSnackBarTip(item.path)
                 6 -> tryToOpenFolder(File(item.path), item.filename)
+                7 -> ItemContentDialog.show(supportFragmentManager, item)
             }
             true
         }
