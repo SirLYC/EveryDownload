@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.lyc.downloader.DownloadTask.FINISH
 import com.lyc.downloader.DownloadTask.PAUSED
 import com.lyc.downloader.YCDownloader
+import com.lyc.everydownload.about.AboutActivity
 import com.lyc.everydownload.preference.AppPreference
 import com.lyc.everydownload.preference.PreferenceActivity
 import com.lyc.everydownload.util.*
@@ -126,6 +127,11 @@ class MainActivity : AppCompatActivity(), DownloadItemViewBinder.OnItemButtonCli
             }
             item.itemId == R.id.preference -> {
                 startActivity(Intent(this, PreferenceActivity::class.java))
+                true
+            }
+
+            item.itemId == R.id.about -> {
+                startActivity(Intent(this, AboutActivity::class.java))
                 true
             }
             else -> super.onOptionsItemSelected(item)

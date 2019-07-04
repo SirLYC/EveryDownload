@@ -1,15 +1,68 @@
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+
+void generateUpdateInfo(String apkName) {
+    println("------------------ Generating version info ------------------")
+    def toDir = rootProject.file(buildInfo.updatePath)
+    def updateJsonFile = new File(toDir, buildInfo.updateInfoFilename)
+    def writeNewFile = true
+    if (updateJsonFile.exists()) {
+        try {
+            def oldUpdateInfo = new JsonSlurper().parse(updateJsonFile)
+            if (buildInfo.versionCode == oldUpdateInfo.code) {
+                writeNewFile = false
+            }
+        } catch (Exception e) {
+            e.printStackTrace()
+            updateJsonFile.delete()
+        }
+    }
+
+    if (writeNewFile) {
+        def apkFile = project.file("build/outputs/apk/release/$apkName")
+        if (!apkFile.exists()) {
+            throw new GradleScriptException("apk file not exist!")
+        }
+        def oldFiles = toDir.listFiles()
+        oldFiles.each {
+            if (!it.delete()) {
+                it.deleteOnExit()
+            }
+        }
+        copy {
+            from(apkFile)
+            into(toDir)
+        }
+        def updateInfo = new Expando(
+                code: buildInfo.versionCode,
+                name: buildInfo.versionName,
+                url: "${buildInfo.updateBaseUrl}${apkFile.name}",
+                time: System.currentTimeMillis(),
+                des: buildInfo.versionDes
+        )
+        def outputJson = new JsonBuilder(updateInfo).toPrettyString()
+        println(outputJson)
+        updateJsonFile.write(outputJson)
+    } else {
+        println("This version is already released.\n" +
+                "VersionCode = ${buildInfo.versionCode}\n" +
+                "Skip generateUpdateInfo.")
+    }
+    println("------------------ Finish Generating version info ------------------")
+}
 
 android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.lyc.everydownload"
-        minSdkVersion buildInfo['minSdkVersion']
-        targetSdkVersion buildInfo['targetSdkVersion']
-        versionCode buildInfo['versionCode']
-        versionName buildInfo['versionName']
+        minSdkVersion buildInfo.minSdkVersion
+        targetSdkVersion buildInfo.targetSdkVersion
+        versionCode buildInfo.versionCode
+        versionName buildInfo.versionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -28,6 +81,12 @@ android {
         }
     }
 
+    buildTypes.all { buildType ->
+        buildType.buildConfigField("String", "RAW_URL", "\"${buildInfo.updateBaseUrl}\"")
+        buildType.buildConfigField("String", "APK_NAME", "\"${"EveryDownload-${buildType.name}-${defaultConfig.versionName}.apk"}\"")
+        buildType.buildConfigField("String", "INFO_FILE_NAME", "\"${buildInfo.updateInfoFilename}\"")
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
@@ -41,10 +100,15 @@ android {
         }
     }
 
-
     applicationVariants.all { variant ->
+        def apkName = "EveryDownload-${variant.buildType.name}-${defaultConfig.versionName}.apk"
         variant.outputs.all {
-            outputFileName = "EveryDownload-${variant.buildType.name}-${defaultConfig.versionName}.apk"
+            outputFileName = apkName
+        }
+        if (variant.buildType.name == "release") {
+            variant.assembleProvider.get().doLast {
+                generateUpdateInfo(apkName)
+            }
         }
     }
 
@@ -53,6 +117,7 @@ android {
         sourceCompatibility = "8"
     }
 }
+
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])

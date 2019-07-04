@@ -32,6 +32,9 @@
             android:name=".preference.PreferenceActivity"
             android:label="@string/preference"
             android:launchMode="singleTop" />
+        <activity
+            android:name=".about.AboutActivity"
+            android:label="@string/about" />
 
         <service
             android:name="com.lyc.downloader.RemoteDownloadService"
