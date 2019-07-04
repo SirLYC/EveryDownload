@@ -9,15 +9,27 @@ import android.text.style.URLSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.set
+import androidx.core.view.isVisible
+import androidx.lifecycle.Observer
 import com.google.android.material.appbar.AppBarLayout
+import com.lyc.everydownload.Async
 import com.lyc.everydownload.BuildConfig
 import com.lyc.everydownload.R
+import com.lyc.everydownload.update.Progress
+import com.lyc.everydownload.update.UpdateCheckListener
+import com.lyc.everydownload.update.UpdateInfo
+import com.lyc.everydownload.update.UpdateUtil
 import com.lyc.everydownload.util.logE
 import com.lyc.everydownload.util.snackbar
+import com.lyc.everydownload.util.toDateString
+import com.lyc.everydownload.util.toast
 import kotlinx.android.synthetic.main.activity_about.*
 import kotlinx.android.synthetic.main.layout_about_content.*
+import java.lang.ref.WeakReference
+import java.util.*
 import kotlin.math.abs
 
 /**
@@ -25,7 +37,71 @@ import kotlin.math.abs
  * @date 2019-07-03
  * @email kevinliu.sir@qq.com
  */
-class AboutActivity : AppCompatActivity() {
+class AboutActivity : AppCompatActivity(), UpdateCheckListener {
+
+    override fun onGetUpdateInfo(info: UpdateInfo) {
+        Async.instantMain.execute {
+            if (info.code <= BuildConfig.VERSION_CODE) {
+                toast("当前已经是最新版本")
+            } else {
+                AlertDialog.Builder(this)
+                        .setTitle("新版本")
+                        .setMessage("版本号：${info.name}.${info.code}\n" +
+                                "发布时间: ${Date(info.time).toDateString()}\n" +
+                                "更新说明:\n" +
+                                info.des)
+                        .setPositiveButton(R.string.update) { _, _ ->
+                            UpdateUtil.downloadAndInstallUpdate((externalCacheDir
+                                    ?: cacheDir).canonicalPath, info)
+                        }
+                        .setNegativeButton(R.string.not_update_now, null)
+                        .show()
+            }
+        }
+    }
+
+    private fun setProgress(isChecking: Boolean, isDownloading: Boolean, progress: Progress?) {
+        if (!isDownloading && !isChecking) {
+            progress_bar.visibility = View.GONE
+        } else {
+            progress_bar.visibility = View.VISIBLE
+            progress_bar.isIndeterminate = progress == null || isChecking == true
+            progress?.run {
+                if (progress.total < 1) {
+                    progress_bar.isIndeterminate = true
+                } else {
+                    progress_bar.isIndeterminate = false
+                    progress_bar.progress = ((progress.cur * 100.0 / progress.total).toInt())
+                }
+            }
+        }
+    }
+
+    private fun setUpdateText(isChecking: Boolean, isDownloading: Boolean) {
+        when {
+            isChecking -> {
+                tv_update.text = "正在检查更新"
+                tv_update.isEnabled = false
+            }
+            isDownloading -> {
+                tv_update.text = ("正在下载更新")
+                tv_update.isEnabled = false
+            }
+            else -> {
+                val updateSpb = SpannableStringBuilder(getString(R.string.click_update))
+                updateSpb[0, updateSpb.length] = object : URLSpan("") {
+                    override fun onClick(widget: View) {
+                        UpdateUtil.checkUpdate(WeakReference(this@AboutActivity))
+                    }
+                }
+                tv_update.isEnabled = true
+                tv_update.text = updateSpb
+                tv_update.movementMethod = LinkMovementMethod.getInstance()
+            }
+        }
+        setProgress(isChecking, isDownloading, UpdateUtil.progressLiveData.value)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_about)
@@ -35,19 +111,37 @@ class AboutActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
         }
 
+        UpdateUtil.progressLiveData.observe(this, Observer {
+            setProgress(UpdateUtil.isChecking.value!!, UpdateUtil.isDownloading.value!!, it)
+        })
+
+        UpdateUtil.isChecking.observe(this, Observer {
+            setUpdateText(it, UpdateUtil.isDownloading.value!!)
+        })
+
+        UpdateUtil.isDownloading.observe(this, Observer {
+            setUpdateText(UpdateUtil.isChecking.value!!, it)
+        })
+
+        UpdateUtil.errorEvent.observeForever {
+            tv_update.snackbar(it)
+        }
+
         val title = toolbar.title
         toolbar.title = null
 
         app_bar.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
-            // 1: collapsed 0: expanded
-            val scale = abs(verticalOffset).toFloat() / appBarLayout.totalScrollRange
-            if (scale == 1f) {
-                toolbar.title = title
-                fab_email.visibility = View.GONE
-            } else {
-                toolbar.title = null
-                fab_email.visibility = View.VISIBLE
-                fab_email.alpha = 1 - scale
+            appBarLayout.post {
+                // 1: collapsed 0: expanded
+                val scale = abs(verticalOffset).toFloat() / appBarLayout.totalScrollRange
+                if (scale == 1f) {
+                    toolbar.title = title
+                    fab_email.isVisible = false
+                } else {
+                    toolbar.title = null
+                    fab_email.isVisible = true
+                    fab_email.alpha = 1 - scale
+                }
             }
         })
 
@@ -63,6 +157,7 @@ class AboutActivity : AppCompatActivity() {
             }
         }
 
+        tv_version_content.text = getString(R.string.version_content_format).format(BuildConfig.VERSION_NAME)
         val relateLinkText = arrayOf(getString(R.string.app_project_link), getString(R.string.downloader_project_link), getString(R.string.apk_download_link), getString(R.string.my_blog))
         val urls = arrayOf("https://github.com/SirLYC/EveryDownload", "https://github.com/SirLYC/YC-Downloader", "${BuildConfig.RAW_URL}${BuildConfig.APK_NAME}", "https://juejin.im/user/592e23d3ac502e006c9afdd7/posts")
         val relateLinkSpb = SpannableStringBuilder(relateLinkText.joinToString("\n\n"))
@@ -73,16 +168,6 @@ class AboutActivity : AppCompatActivity() {
         }
         relate_link_content.text = relateLinkSpb
         relate_link_content.movementMethod = LinkMovementMethod.getInstance()
-
-        tv_version_content.text = getString(R.string.version_content_format).format(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE)
-        val updateSpb = SpannableStringBuilder(getString(R.string.click_update))
-        updateSpb[0, updateSpb.length] = object : URLSpan("") {
-            override fun onClick(widget: View) {
-                widget.snackbar("有空再做～")
-            }
-        }
-        tv_update.text = updateSpb
-        tv_update.movementMethod = LinkMovementMethod.getInstance()
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {

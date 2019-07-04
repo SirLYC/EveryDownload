@@ -10,6 +10,7 @@ import androidx.core.content.FileProvider
 import com.lyc.everydownload.R
 import com.lyc.everydownload.file.FileExploreActivity
 import java.io.File
+import java.security.MessageDigest
 
 /**
  * @author liuyuchuan
@@ -153,5 +154,39 @@ inline fun Context.shareFile(
     } catch (e: Exception) {
         shareFailAction()
         logE("openFile", e)
+    }
+}
+
+
+fun File.md5(): String? {
+    val md = MessageDigest.getInstance("MD5")
+    val byteArray = ByteArray(8192)
+    val inputStream = inputStream()
+    try {
+        var read: Int
+        do {
+            read = inputStream.read(byteArray)
+            if (read > 0) {
+                md.update(byteArray, 0, read)
+            } else {
+                break
+            }
+        } while (read > 0)
+        val digest = md.digest()
+        val sb = StringBuffer()
+        for (b in digest) {
+            val i = b.toInt() and 0xff
+            var hexString = Integer.toHexString(i)
+            if (hexString.length < 2) {
+                hexString = "0$hexString"
+            }
+            sb.append(hexString)
+        }
+        return sb.toString()
+    } catch (e: Exception) {
+        logE("md5", e)
+        return null
+    } finally {
+        inputStream.closeQuietly()
     }
 }

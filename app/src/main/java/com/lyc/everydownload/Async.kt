@@ -9,7 +9,7 @@ import java.util.concurrent.Executors
  * Created by Liu Yuchuan on 2019/5/18.
  */
 object Async {
-    internal val cache: Executor = Executors.newCachedThreadPool()
+    internal val cache = Executors.newCachedThreadPool()
     private val HANDLER = Handler(Looper.getMainLooper())
     internal val main: Executor = Executor { command -> HANDLER.post(command) }
     internal val instantMain = Executor { command ->

@@ -1,32 +1,51 @@
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 
+import java.security.MessageDigest
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
+static String generateMD5(File file) {
+    if (!file.exists() || !file.isFile()) {
+        return null
+    }
+    def digest = MessageDigest.getInstance("MD5")
+    file.withInputStream() { is ->
+        byte[] buffer = new byte[8192]
+        int read
+        while ((read = is.read(buffer)) > 0) {
+            digest.update(buffer, 0, read)
+        }
+    }
+    return digest.digest().encodeHex().toString()
+}
+
 void generateUpdateInfo(String apkName) {
     println("------------------ Generating version info ------------------")
+    def apkFile = project.file("build/outputs/apk/release/$apkName")
+    if (!apkFile.exists()) {
+        throw new GradleScriptException("apk file not exist!")
+    }
     def toDir = rootProject.file(buildInfo.updatePath)
+    String apkHash = generateMD5(apkFile)
     def updateJsonFile = new File(toDir, buildInfo.updateInfoFilename)
     def writeNewFile = true
     if (updateJsonFile.exists()) {
         try {
             def oldUpdateInfo = new JsonSlurper().parse(updateJsonFile)
-            if (buildInfo.versionCode == oldUpdateInfo.code) {
+            if (buildInfo.versionCode <= oldUpdateInfo.code && apkHash == oldUpdateInfo.hash) {
                 writeNewFile = false
             }
         } catch (Exception e) {
+            writeNewFile = true
             e.printStackTrace()
             updateJsonFile.delete()
         }
     }
 
     if (writeNewFile) {
-        def apkFile = project.file("build/outputs/apk/release/$apkName")
-        if (!apkFile.exists()) {
-            throw new GradleScriptException("apk file not exist!")
-        }
         def oldFiles = toDir.listFiles()
         oldFiles.each {
             if (!it.delete()) {
@@ -40,10 +59,15 @@ void generateUpdateInfo(String apkName) {
         def updateInfo = new Expando(
                 code: buildInfo.versionCode,
                 name: buildInfo.versionName,
+                filename: apkFile.name,
                 url: "${buildInfo.updateBaseUrl}${apkFile.name}",
                 time: System.currentTimeMillis(),
-                des: buildInfo.versionDes
+                des: buildInfo.versionDes,
+                size: apkFile.length(),
+                md5: apkHash
         )
+        String newApkHash = generateMD5(new File(toDir, apkName))
+        println("new apk md5: $newApkHash")
         def outputJson = new JsonBuilder(updateInfo).toPrettyString()
         println(outputJson)
         updateJsonFile.write(outputJson)
@@ -135,4 +159,6 @@ dependencies {
     implementation deps['kotlin-stdlib']
     implementation deps['rxpermissions']
     implementation deps['rxjava']
+
+    testImplementation deps['junit']
 }

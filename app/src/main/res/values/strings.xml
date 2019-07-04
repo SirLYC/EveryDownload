@@ -68,13 +68,15 @@
     <string name="version">版本信息</string>
     <string name="licence">开源许可</string>
     <string name="about_project_content">EveryDownload是一款简单、小巧的下载器，支持多任务、断点续传、多种配置。下载引擎是我的另一个项目YC-Downloader。</string>
-    <string name="version_content_format">当前版本: %s\n版本号: %d</string>
+    <string name="version_content_format">当前版本: %s\</string>
     <string name="cannot_open_email">无法打开邮件App</string>
     <string name="relate_link">相关链接</string>
     <string name="app_project_link">APP项目传送门</string>
     <string name="apk_download_link">APK下载传送门</string>
     <string name="downloader_project_link">下载引擎项目传送门</string>
     <string name="share">分享</string>
-    <string name="click_update">点击更新</string>
+    <string name="click_update">点击检查更新</string>
     <string name="my_blog">我的博客</string>
+    <string name="update">更新</string>
+    <string name="not_update_now">暂不更新</string>
 </resources>

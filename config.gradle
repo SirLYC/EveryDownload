@@ -7,13 +7,14 @@ ext {
             compileSdkVersion : 28,
             targetSdkVersion  : 28,
             minSdkVersion     : 19,
-            versionCode       : 1,
-            versionName       : '0.1.0',
-            versionDes        : '完成基本功能，发布第一版～',
+            versionCode       : 2,
+            versionName       : '0.2.0',
+            versionDes        : '1. 添加检查更新功能\n2. 美化`关于页面`',
             updatePath        : 'update',
             updateBaseUrl     : 'https://raw.githubusercontent.com/SirLYC/EveryDownload/master/update/',
             updateInfoFilename: 'updateInfo.json'
     ]
+
     deps = [
             'kotlin-stdlib'       : "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version",
             'lifecycle-ktx'       : "androidx.lifecycle:lifecycle-viewmodel-ktx:2.1.0-alpha04",
